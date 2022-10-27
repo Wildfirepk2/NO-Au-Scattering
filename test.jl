@@ -5,6 +5,13 @@
 # using Molly
 # using GLMakie
 
+# #separate calls
+# f=F_Au(t1)
+# v=V_AuAu(t1)
+
+# one call for f/v. faster
+# f,v=V_AuAu(t1;fv=true)
+
 
 
 #=
