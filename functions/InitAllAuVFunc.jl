@@ -105,6 +105,20 @@ end
 ############################################################################################################
 
 """
+for Molly force function
+"""
+function getdrij(atom_i,coord_i)
+	i=atom_i.index
+
+	# atom i nn coordinates in array
+    nnicoords=[coords[:,j] for j in nn[i]]
+
+	[nnicoords[i]-coord_i for i in eachindex(nnicoords)]
+end
+
+############################################################################################################
+
+"""
 initializes variable mapping nearest neighbor pair distances to case number as Dict. 
 
 see begbie p191
@@ -241,7 +255,7 @@ input is matrix with current Au coords (xyz stored in columns)
 see roy art, p7, eq 20. see fortran GetFNN2
 """
 function F_Au(rAu;inVfunc::Bool=false)
-	# get current nn distances for each atom
+	# get current nn distances for each atom. array of matrices
 	drij=getdrij(rAu)
 
 	# find distances away from equilibrium positions. array of matrices

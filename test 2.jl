@@ -38,7 +38,7 @@ sys2 = System(
 )
 
 simulate!(sys2, simulator2, 10_000)
-visualize(sys2.loggers.coords, boundary2, "sim_lj2.mp4")
+# visualize(sys2.loggers.coords, boundary2, "sim_lj2.mp4")
 
 ###########################################################################################
 
@@ -144,4 +144,4 @@ sys = System(
 
 simulate!(sys, simulator, n_steps)
 
-visualize(sys.loggers.coords, boundary, "sim_agent.mp4"; markersize=0.1)
+# visualize(sys.loggers.coords, boundary, "sim_agent.mp4"; markersize=0.1)
