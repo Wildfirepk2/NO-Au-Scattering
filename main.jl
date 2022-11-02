@@ -13,11 +13,23 @@ include("functions/InitCustomMollyFunc.jl")
 ############################################################################################################
 
 # parameter variables (type: DataFrame) from input files
+
+# Au parameters: coordinates (x, y, z), number of atoms (N), distance to nearest neighbor (dnn), unit cell length (a), simulation box dimensions (aPBCx, aPBCy, aPBCz), force matrix constants (α, β, γ), mass (m)
 au=initAuParams()
+
+# simulation parameters: number of trajectories (Ntraj), temperature (T), time step (dt), number of steps for Au slab equilibration (Nsteps_eq), number of steps for MD (Nsteps_dyn)
 param=initSimParams()
+
+# ground state PES parameters
 PES_GS=initPESParamGS()
+
+# excited state PES parameters
 PES_ionic=initPESParamIonic()
+
+# coupled state PES parameters
 PES_coup=initPESParamCoup()
+
+# NO parameters: velocity of vibration (v) as a function of bond length (r), initial vibrational state (Nv), number of v,r pairs (Nvib), initial translational energy (Et_i), initial incidence angle (θi), mass of nitrogen and oxygen (mN, mO)
 no=initNOParams()
 
 ############################################################################################################
@@ -82,7 +94,7 @@ sys_Au = System(
     coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
 
     # initial atom velocities based on maxwell-Boltzmann distribution at system temp. freezing back layer (velocity at 0K is 0). using velocity function for back layer for consistent units
-    velocities=[i<auatomcutoff ? velocity(au.m[1], param.T[1]) : velocity(au.m[1], 0u"K") for i in 1:au.N[1]],
+    velocities=[i<auatomcutoff ? velocity(au.m[1], param.T[1]) : velocity(1u"u", 0u"K") for i in 1:au.N[1]],
 
     # system boundary. is periodic
     boundary=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1]),
