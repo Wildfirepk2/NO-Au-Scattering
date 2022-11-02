@@ -1,0 +1,106 @@
+# adiabatic molecular dynamics (MD) of NO scattering off of an Au(111) surface
+
+# checked: 10/27/22
+############################################################################################################
+
+# initialize all functions
+include("functions/InitMDUnits.jl")
+include("functions/InitAllParams.jl")
+include("functions/InitAllAuNOVFunc.jl")
+include("functions/InitAllAuVFunc.jl")
+include("functions/InitCustomMollyFunc.jl")
+
+############################################################################################################
+
+# parameter variables (type: DataFrame) from input files
+au=initAuParams()
+param=initSimParams()
+PES_GS=initPESParamGS()
+PES_ionic=initPESParamIonic()
+PES_coup=initPESParamCoup()
+no=initNOParams()
+
+############################################################################################################
+
+# main variables
+
+# 3 x N matrix. xyz coords of each Au atom stored in columns
+rAu=initAuCoords()
+
+# array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
+nn=getnn()
+
+# array of matrices. initial distances to nearest neighbors for each atom. nn xyz coords stored in columns
+r0ij=getdrij(rAu)
+
+# array of arrays. case number for nearest neighbors for each atom. 
+nncase=getcase()
+
+# Dict mapping nn case number to force matrix.
+Aij=initAij()
+
+# array of arrays of matrices. force matrix for nearest neighbors for each atom. 
+Aijarray=initAijarray()
+
+############################################################################################################
+
+# other variables
+Av_Et = 0
+Av_theta = 0
+Av_weighted_theta = 0
+Norm_weighted_theta = 0
+Av_Evib = 0
+Av_Er = 0
+Av_EAu = 0
+NTRAP = 0
+
+# first Au atom of last layer. last layer (atoms 397-528) is frozen
+auatomcutoff=397
+
+############################################################################################################
+
+# Au slab equilibration using Molly
+
+# defining MD propagation method (velocity verlet)
+simulator = VelocityVerlet(
+    # Time step
+    dt=param.dt[1],
+
+    # random scaling of atom velocities for thermal equilibration? setting time constant to 500*dt (same as Molly example). may change later
+    coupling=AndersenThermostat(param.T[1], 500*param.dt[1]),
+)
+
+# defining system
+sys_Au = System(
+    # initializing atoms in system
+    atoms=[Atom(index=i, mass=au.m[1]) for i in 1:au.N[1]],
+
+    # system bound by custom Au slab interactions 
+    pairwise_inters=(),
+
+    # initial atom coordinates. using static arrays (SA) for Molly compatibility
+    coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
+
+    # initial atom velocities based on maxwell-Boltzmann distribution at system temp. freezing back layer (velocity at 0K is 0). using velocity function for back layer for consistent units
+    velocities=[i<auatomcutoff ? velocity(au.m[1], param.T[1]) : velocity(au.m[1], 0u"K") for i in 1:au.N[1]],
+
+    # system boundary. is periodic
+    boundary=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1]),
+
+    # tracking atom coords wrt time. value in parentheses is number of time steps
+    loggers=(
+        # temp=TemperatureLogger(100),
+        coords=CoordinateLogger(10),
+    ),
+)
+
+initcoords=copy(sys_Au.coords)
+
+# run MD
+simulate!(sys_Au, simulator, param.Nsteps_eq[1])
+
+# output animation of equilibration
+# visualize(sys_Au.loggers.coords, boundary, "au slab equilibration.mp4")
+
+# output final coords to csv
+

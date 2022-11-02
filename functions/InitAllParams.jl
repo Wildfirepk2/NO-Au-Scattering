@@ -2,7 +2,7 @@
 # variables are DataFrames. 
 # some DataFrames' columns have only 1 entry so must be referenced by VAR.COL[1]
 
-# checked: 10/25/22 (including all input files)
+# checked: 11/1/22 (including all input files)
 
 ############################################################################################################
 
@@ -26,6 +26,13 @@ function initAuParams()
 	au.aPBCx*=u"Å"
 	au.aPBCy*=u"Å"
 	au.aPBCz*=u"Å"
+	au.m*=u"u"
+
+	# shift up atoms such that back layer at z=0. needed for Molly compatibility
+	au.z.-=minimum(au.z)
+
+	# set infinite height for system. may revert later. best for Molly
+	au.aPBCz[1]=Inf*u"Å"
 
 	# see roy art table 3 (p8). see fortran getVNN2 for adding NA
 	au.α*=u"N/m"*N_A
@@ -129,6 +136,8 @@ function initNOParams()
 	no.v*=u"v_MD"#check up
 	no.Et_i*=u"kJ/mol"
 	no.θi*=u"°"
+	no.mN*=u"u"
+	no.mO*=u"u"
 
 	return no
 end
