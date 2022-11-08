@@ -88,7 +88,7 @@ sys_Au = System(
     atoms=[Atom(index=i, mass=au.m[1]) for i in 1:au.N[1]],
 
     # system bound by custom Au slab interactions 
-    pairwise_inters=(),
+    pairwise_inters=(AuSlabInteraction(false),),
 
     # initial atom coordinates. using static arrays (SA) for Molly compatibility
     coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
@@ -106,13 +106,13 @@ sys_Au = System(
     ),
 )
 
-initcoords=copy(sys_Au.coords)
+# initcoords=copy(sys_Au.coords)
 
 # run MD
 simulate!(sys_Au, simulator, param.Nsteps_eq[1])
 
 # output animation of equilibration
-# visualize(sys_Au.loggers.coords, boundary, "au slab equilibration.mp4")
+visualize(sys_Au.loggers.coords, sys_Au.boundary, "results/au slab equilibration/animation.mp4")
 
 # output final coords to csv
-
+outputsyscoords()
