@@ -10,13 +10,12 @@ using GLMakie
 # interaction for Au slab equilibration
 struct AuSlabInteraction <: PairwiseInteraction
     nl_only::Bool
-    # Any other properties, e.g. constants for the interaction or cutoff parameters
 end
 
 ############################################################################################################
 
-# force function for Au slab equilibration
-function Molly.force(inter::AuSlabInteraction,
+# force function for Au slab equilibration. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
+#= @inline @inbounds =# function Molly.force(inter::AuSlabInteraction,
                         vec_ij,
                         coord_i,
                         coord_j,
@@ -50,49 +49,16 @@ function Molly.force(inter::AuSlabInteraction,
 
         # return force in system units.
         F .|> sysunits
-
-        # v=getdrij(atom_i,coord_i)
     else
+        # tmp step counter
+        if i==au.N[1]
+            println("Step $step_no")
+            global step_no+=1
+        end
+
         # no force on Au atoms
         zeros(3)sysunits
     end
-    # rij=[v[i]-r0ij[:,i] for i in 1:axes(r0ij,2)]
-
-    # farray=[-Aijarray[i]*rij[i] for i in 1:eachindex(rij)]
-
-
-    # # Replace this with your force calculation
-    # # A positive force causes the atoms to move apart
-    # f = 0.0
-
-    # # Obtain a vector for the force
-    # fdr = f * normalize(vec_ij)
-    # return fdr
-
-    # # get current nn distances for each atom. array of matrices
-	# drij=getdrij(rAu)
-
-	# # find distances away from equilibrium positions. array of matrices
-	# rij=drij-r0ij
-
-	# # temp array with forces on each atom due to nn's. array of arrays of arrays
-	# farray=[getnnifarray(rij[i],i) for i in eachindex(rij)]
-
-    # function getnnifarray(rij_i,i)
-    #     # F=−Aij(nn case no)*rij
-    #     [-Aijarray[i][j]*rij_i[:,j] for j in axes(rij_i,2)]
-    # end
-
-	# if inVfunc
-	# 	# only if called in V_AuAu function. option added for speed
-	# 	return rij,farray
-	# else
-	# 	# normal behavior. return only forces
-
-	# 	# sum forces on each atom
-	# 	f=sum.(farray)
-	# 	return f
-	# end
 end
 
 ############################################################################################################
@@ -100,12 +66,18 @@ end
 """
 output atom coords w time to csv
 """
-function outputsyscoords()
+function outputsyscoords(sys,path)
+    # create folder for coords at $path
+    coordpath=mkpath("$path/coords")
+
     # coords from molly's loggers
-    datasrc=sys_Au.loggers.coords.history
+    datasrc=sys.loggers.coords.history
 
     # write csv files for ea time step
     for i in eachindex(datasrc)
+        # simulation step no
+        step=(i-1)*stepslogging
+
         # xyz positions stored as temp vars
         xs=[datasrc[i][j][1] for j in eachindex(datasrc[i])]
         ys=[datasrc[i][j][2] for j in eachindex(datasrc[i])]
@@ -113,7 +85,35 @@ function outputsyscoords()
 
         # write to csv
         data=DataFrame(x=xs,y=ys,z=zs)
-        file="results/au slab equilibration/coords/syscoords-step $i.csv"
+        file="$coordpath/syscoords-step $step.csv"
         CSV.write(file,data)
     end
+end
+
+############################################################################################################
+
+"""
+output all system info. animation. logger stuff. forces/velocities last step
+
+need to give a system description as string. 
+"""
+function outputsysinfo(sys,desc)
+    # make directories to store results of current run
+    date=Dates.format(now(), "yyyy-mm-ddTHMS")
+    mainpath="results/$desc--$date"
+    mkpath(mainpath)
+
+    # output animation of simulation in $mainpath
+    visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4")
+
+    # output final coords to csv in separate folder
+    outputsyscoords(sys,mainpath)
+
+    # output final velocities to csv
+    data=DataFrame(vx=sys.loggers.velocity.history[end][:,1],vy=sys.loggers.velocity.history[end][:,2],vz=sys.loggers.velocity.history[end][:,3])
+    CSV.write("results/au slab equilibration/velocities/velocities-last step.csv",data)
+
+    # output final forces to csv
+    data=DataFrame(Fx=sys.loggers.forces.history[end][:,1],Fy=sys.loggers.forces.history[end][:,2],Fz=sys.loggers.forces.history[end][:,3])
+    CSV.write("results/au slab equilibration/forces/forces-last step.csv",data)
 end

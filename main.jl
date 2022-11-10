@@ -66,8 +66,11 @@ Av_Er = 0
 Av_EAu = 0
 NTRAP = 0
 
-# first Au atom of last layer. last layer (atoms 397-528) is frozen
+# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
 auatomcutoff=397
+
+# log parameters after n steps. may put in param var
+stepslogging=10
 
 ############################################################################################################
 
@@ -78,8 +81,8 @@ simulator = VelocityVerlet(
     # Time step
     dt=param.dt[1],
 
-    # random scaling of atom velocities for thermal equilibration? setting time constant to 500*dt (same as Molly example). may change later
-    coupling=AndersenThermostat(param.T[1], 500*param.dt[1]),
+    # # random scaling of atom velocities for thermal equilibration? setting time constant to 500*dt (same as Molly example). may change later
+    # coupling=AndersenThermostat(param.T[1], 500*param.dt[1]),
 )
 
 # defining system
@@ -99,20 +102,30 @@ sys_Au = System(
     # system boundary. is periodic
     boundary=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1]),
 
-    # tracking atom coords wrt time. value in parentheses is number of time steps
+    # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(
-        # temp=TemperatureLogger(100),
-        coords=CoordinateLogger(10),
+        # capture velocities and forces at last time step
+        velocity=VelocityLogger(param.Nsteps_eq[1]),
+        forces=ForceLogger(param.Nsteps_eq[1]),
+
+        # # checking energy conservation
+        # te=TotalEnergyLogger(stepslogging),
+        # pe=PotentialEnergyLogger(stepslogging),
+        # ke=KineticEnergyLogger(stepslogging),
+
+        # for animation
+        coords=CoordinateLogger(stepslogging),
     ),
 )
 
+# # may use instead of r0ij, rAu in future
 # initcoords=copy(sys_Au.coords)
 
-# run MD
-simulate!(sys_Au, simulator, param.Nsteps_eq[1])
+# tmp step counter
+step_no=1
 
-# output animation of equilibration
-visualize(sys_Au.loggers.coords, sys_Au.boundary, "results/au slab equilibration/animation.mp4")
+# run MD. cutting down steps for debugging
+simulate!(sys_Au, simulator, param.Nsteps_eq[1]/1000)
 
-# output final coords to csv
-outputsyscoords()
+# output all system data: animation, coords, last velocities/forces
+outputsysinfo(sys_Au,"au slab equilibration")
