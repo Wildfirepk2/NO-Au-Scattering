@@ -57,6 +57,8 @@ Aijarray=initAijarray()
 ############################################################################################################
 
 # other variables
+
+# copied from fortran
 Av_Et = 0
 Av_theta = 0
 Av_weighted_theta = 0
@@ -66,15 +68,28 @@ Av_Er = 0
 Av_EAu = 0
 NTRAP = 0
 
+############################################################################################################
+
+# MD related variables
+
 # first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
-auatomcutoff=397
+const auatomcutoff=397
 
 # log parameters after n steps. may put in param var
-stepslogging=10
+const stepslogging=10
+
+# scale down factor on steps for debugging. f=1 no scaling.
+const scalefactor=1000
+
+# actual steps for au equilibration. maybe edit later to always be divisable by 10
+const steps_eq=param.Nsteps_eq[1]/scalefactor
+
+# actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
+const actsteplog = steps_eq<100 ? 1 : stepslogging
 
 ############################################################################################################
 
-# Au slab equilibration using Molly
+# Au slab equilibration (MD) using Molly
 
 # defining MD propagation method (velocity verlet)
 simulator = VelocityVerlet(
@@ -105,16 +120,16 @@ sys_Au = System(
     # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(
         # capture velocities and forces at last time step
-        velocity=VelocityLogger(param.Nsteps_eq[1]),
-        forces=ForceLogger(param.Nsteps_eq[1]),
+        velocity=VelocityLogger(steps_eq),
+        forces=ForceLogger(steps_eq),
 
         # # checking energy conservation
-        # te=TotalEnergyLogger(stepslogging),
-        # pe=PotentialEnergyLogger(stepslogging),
-        # ke=KineticEnergyLogger(stepslogging),
+        # te=TotalEnergyLogger(actsteplog),
+        # pe=PotentialEnergyLogger(actsteplog),
+        # ke=KineticEnergyLogger(actsteplog),
 
         # for animation
-        coords=CoordinateLogger(stepslogging),
+        coords=CoordinateLogger(actsteplog),
     ),
 )
 
@@ -125,7 +140,7 @@ sys_Au = System(
 step_no=1
 
 # run MD. cutting down steps for debugging
-simulate!(sys_Au, simulator, param.Nsteps_eq[1]/1000)
+simulate!(sys_Au, simulator, steps_eq)
 
 # output all system data: animation, coords, last velocities/forces
 outputsysinfo(sys_Au,"au slab equilibration")

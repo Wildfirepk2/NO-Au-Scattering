@@ -76,7 +76,7 @@ function outputsyscoords(sys,path)
     # write csv files for ea time step
     for i in eachindex(datasrc)
         # simulation step no
-        step=(i-1)*stepslogging
+        step=(i-1)*actsteplog
 
         # xyz positions stored as temp vars
         xs=[datasrc[i][j][1] for j in eachindex(datasrc[i])]
@@ -88,6 +88,64 @@ function outputsyscoords(sys,path)
         file="$coordpath/syscoords-step $step.csv"
         CSV.write(file,data)
     end
+end
+
+############################################################################################################
+
+"""
+output last forces on atoms to csv. called only in outputsysinfo
+"""
+function outputlastforces(sys,path)
+    # create folder for coords at $path
+    forcepath=mkpath("$path/last step/forces")
+
+    # number steps in run
+    nsteps=sys.loggers.forces.n_steps
+
+    # time step of run (dt)
+    dt=simulator.dt
+
+    # coords from molly's loggers
+    datasrc=sys.loggers.forces.history
+
+    # Fx,Fy,Fz stored as temp vars
+    xs=[datasrc[end][j][1] for j in eachindex(datasrc[i])]
+    ys=[datasrc[end][j][2] for j in eachindex(datasrc[i])]
+    zs=[datasrc[end][j][3] for j in eachindex(datasrc[i])]
+
+    # write to csv
+    data=DataFrame(x=xs,y=ys,z=zs)
+    file="$forcepath/forces-step $nsteps-dt $dt.csv"
+    CSV.write(file,data)
+end
+
+############################################################################################################
+
+"""
+output last velocities on atoms to csv. called only in outputsysinfo
+"""
+function outputlastvelocities(sys,path)
+    # create folder for coords at $path
+    velocitypath=mkpath("$path/last step/velocities")
+
+    # number steps in run
+    nsteps=sys.loggers.velocities.n_steps
+
+    # time step of run (dt)
+    dt=simulator.dt
+
+    # coords from molly's loggers
+    datasrc=sys.loggers.velocities.history
+
+    # Vx,Vy,Vz stored as temp vars
+    xs=[datasrc[end][j][1] for j in eachindex(datasrc[i])]
+    ys=[datasrc[end][j][2] for j in eachindex(datasrc[i])]
+    zs=[datasrc[end][j][3] for j in eachindex(datasrc[i])]
+
+    # write to csv
+    data=DataFrame(x=xs,y=ys,z=zs)
+    file="$velocitypath/velocities-step $nsteps-dt $dt.csv"
+    CSV.write(file,data)
 end
 
 ############################################################################################################
@@ -106,14 +164,10 @@ function outputsysinfo(sys,desc)
     # output animation of simulation in $mainpath
     visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4")
 
-    # output final coords to csv in separate folder
+    # output coords to csv in separate folder
     outputsyscoords(sys,mainpath)
 
-    # output final velocities to csv
-    data=DataFrame(vx=sys.loggers.velocity.history[end][:,1],vy=sys.loggers.velocity.history[end][:,2],vz=sys.loggers.velocity.history[end][:,3])
-    CSV.write("results/au slab equilibration/velocities/velocities-last step.csv",data)
-
-    # output final forces to csv
-    data=DataFrame(Fx=sys.loggers.forces.history[end][:,1],Fy=sys.loggers.forces.history[end][:,2],Fz=sys.loggers.forces.history[end][:,3])
-    CSV.write("results/au slab equilibration/forces/forces-last step.csv",data)
+    # output final forces/velocities to csv in separate folder
+    outputlastforces(sys,mainpath)
+    outputlastvelocities(sys,mainpath)
 end
