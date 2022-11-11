@@ -4,6 +4,7 @@
 
 using Molly
 using GLMakie
+using Dates
 
 ############################################################################################################
 
@@ -96,7 +97,7 @@ end
 output last forces on atoms to csv. called only in outputsysinfo
 """
 function outputlastforces(sys,path)
-    # create folder for coords at $path
+    # create folder for last forces at $path
     forcepath=mkpath("$path/last step/forces")
 
     # number steps in run
@@ -109,9 +110,9 @@ function outputlastforces(sys,path)
     datasrc=sys.loggers.forces.history
 
     # Fx,Fy,Fz stored as temp vars
-    xs=[datasrc[end][j][1] for j in eachindex(datasrc[i])]
-    ys=[datasrc[end][j][2] for j in eachindex(datasrc[i])]
-    zs=[datasrc[end][j][3] for j in eachindex(datasrc[i])]
+    xs=[datasrc[end][j][1] for j in eachindex(datasrc[end])]
+    ys=[datasrc[end][j][2] for j in eachindex(datasrc[end])]
+    zs=[datasrc[end][j][3] for j in eachindex(datasrc[end])]
 
     # write to csv
     data=DataFrame(x=xs,y=ys,z=zs)
@@ -125,7 +126,7 @@ end
 output last velocities on atoms to csv. called only in outputsysinfo
 """
 function outputlastvelocities(sys,path)
-    # create folder for coords at $path
+    # create folder for last velocities at $path
     velocitypath=mkpath("$path/last step/velocities")
 
     # number steps in run
@@ -138,9 +139,9 @@ function outputlastvelocities(sys,path)
     datasrc=sys.loggers.velocities.history
 
     # Vx,Vy,Vz stored as temp vars
-    xs=[datasrc[end][j][1] for j in eachindex(datasrc[i])]
-    ys=[datasrc[end][j][2] for j in eachindex(datasrc[i])]
-    zs=[datasrc[end][j][3] for j in eachindex(datasrc[i])]
+    xs=[datasrc[end][j][1] for j in eachindex(datasrc[end])]
+    ys=[datasrc[end][j][2] for j in eachindex(datasrc[end])]
+    zs=[datasrc[end][j][3] for j in eachindex(datasrc[end])]
 
     # write to csv
     data=DataFrame(x=xs,y=ys,z=zs)

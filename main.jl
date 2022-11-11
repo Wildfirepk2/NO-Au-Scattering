@@ -82,7 +82,7 @@ const stepslogging=10
 const scalefactor=1000
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
-const steps_eq=param.Nsteps_eq[1]/scalefactor
+const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<100 ? 1 : stepslogging
@@ -120,7 +120,7 @@ sys_Au = System(
     # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(
         # capture velocities and forces at last time step
-        velocity=VelocityLogger(steps_eq),
+        velocities=VelocityLogger(steps_eq),
         forces=ForceLogger(steps_eq),
 
         # # checking energy conservation
