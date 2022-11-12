@@ -78,8 +78,11 @@ const auatomcutoff=397
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
-# scale down factor on steps for debugging. f=1 no scaling.
+### scale down factor on steps for debugging. f=1 no scaling.
 const scalefactor=1000
+
+### description of run
+desc="au 5 step log E"
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -123,10 +126,10 @@ sys_Au = System(
         velocities=VelocityLogger(steps_eq),
         forces=ForceLogger(steps_eq),
 
-        # # checking energy conservation
-        # te=TotalEnergyLogger(actsteplog),
-        # pe=PotentialEnergyLogger(actsteplog),
-        # ke=KineticEnergyLogger(actsteplog),
+        # checking energy conservation
+        et=TotalEnergyLogger(actsteplog),
+        pe=PotentialEnergyLogger(actsteplog),
+        ke=KineticEnergyLogger(actsteplog),
 
         # for animation
         coords=CoordinateLogger(actsteplog),
@@ -143,4 +146,4 @@ step_no=1
 simulate!(sys_Au, simulator, steps_eq)
 
 # output all system data: animation, coords, last velocities/forces
-outputsysinfo(sys_Au,"au slab equilibration")
+outputsysinfo(sys_Au,desc)

@@ -15,7 +15,7 @@ end
 
 ############################################################################################################
 
-# force function for Au slab equilibration. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
+# force function for Au slab equilibration. calculating F for each atom. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 #= @inline @inbounds =# function Molly.force(inter::AuSlabInteraction,
                         vec_ij,
                         coord_i,
@@ -33,19 +33,19 @@ end
     if i<auatomcutoff
         # normal operation
 
-        # nn coords for atom i
+        # nn coords for atom i. array of arrays
         nncoords=[sys_Au.coords[j] for j in nn[i]]
 
-        # nn coords dist away from atom i
+        # nn coords dist away from atom i. array of arrays
         drij=[nncoords[j]-coord_i for j in eachindex(nncoords)]
 
-        # dist of nn pairs away from equilibrium
+        # dist of nn pairs away from equilibrium. array of arrays
         rij=[drij[j]-r0ij[i][:,j] for j in eachindex(drij)]
 
-        # force each nn pair exerts on atom i
+        # force each nn pair exerts on atom i. array of arrays
         Fij=[-Aijarray[i][j]*rij[j] for j in eachindex(rij)]
 
-        # total force on atom i
+        # total force on atom i. array
         F=sum(Fij)
 
         # return force in system units.
@@ -89,6 +89,33 @@ function outputsyscoords(sys,path)
         file="$coordpath/syscoords-step $step.csv"
         CSV.write(file,data)
     end
+end
+
+############################################################################################################
+
+"""
+output system energies w time to csv
+"""
+function outputsysE(sys,path)
+    # create folder for energies at $path
+    Epath=mkpath("$path/energies")
+
+    # number steps in run
+    nsteps=sys.loggers.et.n_steps
+
+    # time step of run (dt)
+    dt=simulator.dt
+
+    # tmp vars for time, kinetic, potential, and total energies
+    time=[i*dt for i in 0:nsteps]
+    KE=sys.loggers.ke.history
+    PE=sys.loggers.pe.history
+    TE=sys.loggers.et.history
+
+    # write to csv
+    data=DataFrame(time=time,KE=KE,PE=PE,TE=TE)
+    file="$Epath/sysE.csv"
+    CSV.write(file,data)
 end
 
 ############################################################################################################
@@ -165,10 +192,46 @@ function outputsysinfo(sys,desc)
     # output animation of simulation in $mainpath
     visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4")
 
-    # output coords to csv in separate folder
+    # output coords/energies to csv in separate folder
     outputsyscoords(sys,mainpath)
+    outputsysE(sys,mainpath)
 
     # output final forces/velocities to csv in separate folder
     outputlastforces(sys,mainpath)
     outputlastvelocities(sys,mainpath)
+end
+
+############################################################################################################
+
+# potential energy (V) for Au slab equilibration. calculating V for each atom. molly will sum all Vs. similar to force function. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
+function Molly.potential_energy(inter::AuSlabInteraction,
+                          dr,
+                          coord_i,
+                          coord_j,
+                          atom_i,
+                          atom_j,
+                          boundary)
+    # fetch atom_i's index
+    i=atom_i.index
+
+    # # fetch system's force units. needed for Molly compatibility. may change later
+    # sysunits=sys_Au.force_units
+
+    # nn coords for atom i. array of arrays
+    nncoords=[sys_Au.coords[j] for j in nn[i]]
+
+    # nn coords dist away from atom i. array of arrays
+    drij=[nncoords[j]-coord_i for j in eachindex(nncoords)]
+
+    # dist of nn pairs away from equilibrium. array of arrays
+    rij=[drij[j]-r0ij[i][:,j] for j in eachindex(drij)]
+
+    # force each nn pair exerts on atom i. array of arrays
+    Fij=[-Aijarray[i][j]*rij[j] for j in eachindex(rij)]
+
+    # V each nn pair exerts on atom i. array of numbers
+    Vij=[dot(rij[j],-Fij[j]) for j in eachindex(Fij)]
+
+    # total V on atom i. divide by 2 because of v definition
+    V=sum(Vij)/2
 end
