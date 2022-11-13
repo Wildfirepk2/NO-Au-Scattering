@@ -101,7 +101,7 @@ function outputsysE(sys,path)
     Epath=mkpath("$path/energies")
 
     # number steps in run
-    nsteps=sys.loggers.et.n_steps
+    nsteps=length(sys.loggers.et.history)-1
 
     # time step of run (dt)
     dt=simulator.dt
@@ -113,7 +113,7 @@ function outputsysE(sys,path)
     TE=sys.loggers.et.history
 
     # write to csv
-    data=DataFrame(time=time,KE=KE,PE=PE,TE=TE)
+    data=DataFrame(t=time,KE=KE,PE=PE,TE=TE)
     file="$Epath/sysE.csv"
     CSV.write(file,data)
 end
