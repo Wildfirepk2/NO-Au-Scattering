@@ -82,7 +82,7 @@ const stepslogging=10
 const scalefactor=1000
 
 ### description of run
-desc="au 5 step log E"
+desc="au 5 step log E w graph"
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor

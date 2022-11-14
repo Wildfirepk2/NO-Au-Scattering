@@ -79,10 +79,10 @@ function outputsyscoords(sys,path)
         # simulation step no
         step=(i-1)*actsteplog
 
-        # xyz positions stored as temp vars
-        xs=[datasrc[i][j][1] for j in eachindex(datasrc[i])]
-        ys=[datasrc[i][j][2] for j in eachindex(datasrc[i])]
-        zs=[datasrc[i][j][3] for j in eachindex(datasrc[i])]
+        # xyz positions stored as temp vars. converted to MD units then unit stripped
+        xs=ustrip([datasrc[i][j][1] for j in eachindex(datasrc[i])] .|> u"d_MD")
+        ys=ustrip([datasrc[i][j][2] for j in eachindex(datasrc[i])] .|> u"d_MD")
+        zs=ustrip([datasrc[i][j][3] for j in eachindex(datasrc[i])] .|> u"d_MD")
 
         # write to csv
         data=DataFrame(x=xs,y=ys,z=zs)
@@ -106,16 +106,28 @@ function outputsysE(sys,path)
     # time step of run (dt)
     dt=simulator.dt
 
-    # tmp vars for time, kinetic, potential, and total energies
-    time=[i*dt for i in 0:nsteps]
-    KE=sys.loggers.ke.history
-    PE=sys.loggers.pe.history
-    TE=sys.loggers.et.history
-
-    # write to csv
+    # tmp vars for time, kinetic, potential, and total energies. converted to MD units then unit stripped
+    time=ustrip([i*dt for i in 0:nsteps] .|> u"t_MD")
+    KE=ustrip(sys.loggers.ke.history .|> u"e_MD")
+    PE=ustrip(sys.loggers.pe.history .|> u"e_MD")
+    TE=ustrip(sys.loggers.et.history .|> u"e_MD")
+    
+    # write to csv at $Epath
     data=DataFrame(t=time,KE=KE,PE=PE,TE=TE)
     file="$Epath/sysE.csv"
     CSV.write(file,data)
+
+    # create plot obj w params. add KE series
+    fig,ax,KEseries=scatterlines(time,KE,label="KE";
+    axis = (; title = "Au slab equilibration: Checking energy conservation", xlabel = "Time (t_MD)", ylabel = "Energy (e_MD)"))
+
+    # add PE/TE series
+    PEseries=scatterlines!(time,PE,label="PE")
+    TEseries=scatterlines!(time,TE,label="TE")
+    axislegend()
+    
+    # save plot to $Epath
+    save("$Epath/Evt.png", fig)
 end
 
 ############################################################################################################
@@ -136,10 +148,10 @@ function outputlastforces(sys,path)
     # coords from molly's loggers
     datasrc=sys.loggers.forces.history
 
-    # Fx,Fy,Fz stored as temp vars
-    xs=[datasrc[end][j][1] for j in eachindex(datasrc[end])]
-    ys=[datasrc[end][j][2] for j in eachindex(datasrc[end])]
-    zs=[datasrc[end][j][3] for j in eachindex(datasrc[end])]
+    # Fx,Fy,Fz stored as temp vars. converted to MD units then unit stripped
+    xs=ustrip([datasrc[end][j][1] for j in eachindex(datasrc[end])] .|> u"e_MD/d_MD")
+    ys=ustrip([datasrc[end][j][2] for j in eachindex(datasrc[end])] .|> u"e_MD/d_MD")
+    zs=ustrip([datasrc[end][j][3] for j in eachindex(datasrc[end])] .|> u"e_MD/d_MD")
 
     # write to csv
     data=DataFrame(x=xs,y=ys,z=zs)
@@ -165,10 +177,10 @@ function outputlastvelocities(sys,path)
     # coords from molly's loggers
     datasrc=sys.loggers.velocities.history
 
-    # Vx,Vy,Vz stored as temp vars
-    xs=[datasrc[end][j][1] for j in eachindex(datasrc[end])]
-    ys=[datasrc[end][j][2] for j in eachindex(datasrc[end])]
-    zs=[datasrc[end][j][3] for j in eachindex(datasrc[end])]
+    # Vx,Vy,Vz stored as temp vars. converted to MD units then unit stripped
+    xs=ustrip([datasrc[end][j][1] for j in eachindex(datasrc[end])] .|> u"v_MD")
+    ys=ustrip([datasrc[end][j][2] for j in eachindex(datasrc[end])] .|> u"v_MD")
+    zs=ustrip([datasrc[end][j][3] for j in eachindex(datasrc[end])] .|> u"v_MD")
 
     # write to csv
     data=DataFrame(x=xs,y=ys,z=zs)
