@@ -9,7 +9,8 @@ dependencies = [# for Au slab
                 "CSV", 
 
                 # unit integration
-                "Unitful", 
+                "Unitful",
+		"PhysicalConstants",
 
                 # GPU integration
                 "CUDA",
