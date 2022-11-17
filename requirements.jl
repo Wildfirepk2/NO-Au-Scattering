@@ -17,7 +17,8 @@ dependencies = [# for Au slab
 
                 # MD
                 "Molly",
-                "GLMakie",
+		"GLFW",
+		"GLMakie",
                 ]
 
 Pkg.add(dependencies)
