@@ -9,6 +9,7 @@ include("functions/InitAllParams.jl")
 include("functions/InitAllAuNOVFunc.jl")
 include("functions/InitAllAuVFunc.jl")
 include("functions/InitCustomMollyFunc.jl")
+include("functions/InitSimAnalysisFunc.jl")
 
 ############################################################################################################
 
@@ -82,7 +83,7 @@ const stepslogging=10
 const scalefactor=1000
 
 ### description of run
-desc="au 5 step log E w graph"
+rundesc="au 5 step loggers v2"
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -146,4 +147,4 @@ step_no=1
 simulate!(sys_Au, simulator, steps_eq)
 
 # output all system data: animation, coords, last velocities/forces
-outputsysinfo(sys_Au,desc)
+outputsysinfo(sys_Au,rundesc,"Au")
