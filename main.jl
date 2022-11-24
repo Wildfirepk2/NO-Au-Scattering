@@ -83,7 +83,7 @@ const stepslogging=10
 const scalefactor=1000
 
 ### description of run
-rundesc="au 5 step loggers v2"
+rundesc="au 5 step forces v2"
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor

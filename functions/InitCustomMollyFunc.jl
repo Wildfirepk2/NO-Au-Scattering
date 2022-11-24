@@ -35,13 +35,13 @@ end
         nncoords=[sys_Au.coords[j] for j in nn[i]]
 
         # nn coords dist away from atom i. array of arrays
-        drij=[nncoords[j]-coord_i for j in eachindex(nncoords)]
+        drij=[vector(coord_i,nncoords[j],boundary) for j in eachindex(nncoords)]
 
         # dist of nn pairs away from equilibrium. array of arrays
-        rij=[drij[j]-r0ij[i][:,j] for j in eachindex(drij)]
+        rij=[vector(r0ij[i][:,j],drij[j],boundary) for j in eachindex(drij)]
 
         # force each nn pair exerts on atom i. array of arrays
-        Fij=[-Aijarray[i][j]*rij[j] for j in eachindex(rij)]
+        Fij=[SVector{3}(-Aijarray[i][j]*rij[j]) for j in eachindex(rij)]
 
         # total force on atom i. array
         F=sum(Fij)
@@ -56,7 +56,7 @@ end
         end
 
         # no force on Au atoms
-        zeros(3)sysunits
+        SVector{3}(zeros(3)sysunits)
     end
 end
 
