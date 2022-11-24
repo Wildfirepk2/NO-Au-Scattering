@@ -80,16 +80,13 @@ end
     nncoords=[sys_Au.coords[j] for j in nn[i]]
 
     # nn coords dist away from atom i. array of arrays
-    drij=[nncoords[j]-coord_i for j in eachindex(nncoords)]
+    drij=[vector(coord_i,nncoords[j],boundary) for j in eachindex(nncoords)]
 
     # dist of nn pairs away from equilibrium. array of arrays
-    rij=[drij[j]-r0ij[i][:,j] for j in eachindex(drij)]
-
-    # force each nn pair exerts on atom i. array of arrays
-    Fij=[-Aijarray[i][j]*rij[j] for j in eachindex(rij)]
+    rij=[vector(r0ij[i][:,j],drij[j],boundary) for j in eachindex(drij)]
 
     # V each nn pair exerts on atom i. array of numbers
-    Vij=[dot(rij[j],-Fij[j]) for j in eachindex(Fij)]
+    Vij=[dot(rij[j],Aijarray[i][j],rij[j]) for j in eachindex(rij)]
 
     # total V on atom i. divide by 2 because of v definition
     V=sum(Vij)/2
