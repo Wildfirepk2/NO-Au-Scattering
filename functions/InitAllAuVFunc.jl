@@ -187,35 +187,34 @@ function initAij()
 	β=au.β[1]
 	γ=au.γ[1]
 
-	# grabbing units for α. needed for giving 0's the right units
-	aunit=unit(α)
+	# 0 with same units as force constants. needed for matrices all being of the same unit
+	unit0=0*unit(α)
 
-	# possible force matrices wrt 100
-	m1=[α 0*aunit 0*aunit; 0*aunit β γ; 0*aunit γ β]
-	m7=[α 0*aunit 0*aunit; 0*aunit β γ; 0*aunit γ β]
+	# possible force matrices wrt 100. static arrays (SA) for speed
+	m1=[α unit0 unit0; unit0 β γ; unit0 γ β]
+	m7=[α unit0 unit0; unit0 β γ; unit0 γ β]
 
-	m2=[α 0*aunit 0*aunit; 0*aunit β -γ; 0*aunit -γ β]
-	m8=[α 0*aunit 0*aunit; 0*aunit β -γ; 0*aunit -γ β]
+	m2=[α unit0 unit0; unit0 β -γ; unit0 -γ β]
+	m8=[α unit0 unit0; unit0 β -γ; unit0 -γ β]
 
-	m3=[β 0*aunit γ; 0*aunit α 0*aunit; γ 0*aunit β]
-	m9=[β 0*aunit γ; 0*aunit α 0*aunit; γ 0*aunit β]
+	m3=[β unit0 γ; unit0 α unit0; γ unit0 β]
+	m9=[β unit0 γ; unit0 α unit0; γ unit0 β]
 
-	m4=[β 0*aunit -γ; 0*aunit α 0*aunit; -γ 0*aunit β]
-	m10=[β 0*aunit -γ; 0*aunit α 0*aunit; -γ 0*aunit β]
+	m4=[β unit0 -γ; unit0 α unit0; -γ unit0 β]
+	m10=[β unit0 -γ; unit0 α unit0; -γ unit0 β]
 
-	m5=[β γ 0*aunit; γ β 0*aunit; 0*aunit 0*aunit α]
-	m11=[β γ 0*aunit; γ β 0*aunit; 0*aunit 0*aunit α]
+	m5=[β γ unit0; γ β unit0; unit0 unit0 α]
+	m11=[β γ unit0; γ β unit0; unit0 unit0 α]
 
-	m6=[β -γ 0*aunit; -γ β 0*aunit; 0*aunit 0*aunit α]
-	m12=[β -γ 0*aunit; -γ β 0*aunit; 0*aunit 0*aunit α]
+	m6=[β -γ unit0; -γ β unit0; unit0 unit0 α]
+	m12=[β -γ unit0; -γ β unit0; unit0 unit0 α]
 
 	# all force matrices in array
 	A_100=[m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12]
 
 	# convert force matrices to 111 and store in array. U'*A_100*U=A_111. U is transformation matrix (see notebook for derivation). ' is transpose
 	u=[1/√2 -1/√6 1/√3; 0 2/√6 1/√3; -1/√2 -1/√6 1/√3]
-	A_100U=[A_100[i]*u for i in eachindex(A_100)]
-	A_111=[u'*A_100U[i] for i in eachindex(A_100U)]
+	A_111=[SMatrix{3,3}(u'*A_100[i]*u) for i in eachindex(A_100)]
 	
 	# store force matrices/case numbers (1-12) in dictionary
 	Dict(zip(1:12,A_111))
