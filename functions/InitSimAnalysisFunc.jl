@@ -190,7 +190,7 @@ function outputsysinfo(sys,rundesc,systype)
     mainpath=mkpath("results/$rundesc--$date")
 
     # output animation of simulation in $mainpath
-    visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4")
+    visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4";show_boundary=false)
 
     # output coords/energies to csv in separate folder
     outputallsyscoords(sys,mainpath)

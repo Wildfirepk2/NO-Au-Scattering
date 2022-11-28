@@ -25,6 +25,7 @@ function initAuParams()
 	# layer spacings. for better viewing of coords in molly. may change approach later.
 	xspc=1.476085406u"Å"
 	yspc=0.852218306u"Å"
+	zspc=2.410437374u"Å"
 
 	# shift atoms (y dir) to give 2 layers spacing before slab. original pos: -1 layer.
 	au.y.+=3*yspc
@@ -40,6 +41,9 @@ function initAuParams()
 
 	# shift up atoms such that back layer at z=0. needed for Molly compatibility
 	au.z.-=minimum(au.z)
+
+	# shift atoms (z dir) to give 1 layer spacing before slab. original pos: 0 layer.
+	au.z.+=zspc
 
 	# set infinite height for system. may revert later. best for Molly
 	au.aPBCz[1]=Inf*u"Å"
