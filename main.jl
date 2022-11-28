@@ -45,16 +45,16 @@ const auatomcutoff=397
 const stepslogging=10
 
 ### scale down factor on steps for debugging. f=1 no scaling.
-const scalefactor=1
+const scalefactor=1000
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
-const actsteplog = steps_eq<100 ? 1 : stepslogging
+const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of run
-rundesc="au $steps_eq steps"
+rundesc="au $steps_eq steps-no CM-part NN-force!-1F"
 
 ############################################################################################################
 
@@ -102,6 +102,9 @@ simulator = VelocityVerlet(
     # Time step
     dt=param.dt[1],
 
+    # dont remove center of mass motion to keep layer fixed. may revert.
+    remove_CM_motion=false,
+
     # # random scaling of atom velocities for thermal equilibration? setting time constant to 500*dt (same as Molly example). may change later
     # coupling=AndersenThermostat(param.T[1], 500*param.dt[1]),
 )
@@ -124,7 +127,7 @@ sys_Au = System(
     boundary=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1]),
 
     # using custom neighbor finder
-    neighbor_finder=MyNeighborFinder(),
+    neighbor_finder=AuNeighborFinder(),
 
     # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(
