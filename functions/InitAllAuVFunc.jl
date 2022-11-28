@@ -4,11 +4,6 @@
 
 ############################################################################################################
 
-using NearestNeighbors
-using LinearAlgebra
-
-############################################################################################################
-
 """
 removes same atom pairs from nearest neighbor list. 
 
@@ -28,7 +23,7 @@ end
 ############################################################################################################
 
 """
-outputs 1st nearest neighbors (nn) for each Au atom as array of arrays. 
+outputs 1st nearest neighbors (nn) for each Au atom as array of arrays and neighbor object (for molly compatibility).
 
 employs NearestNeighbors package. Au's crystal structure is fcc. thus, each atom (except those at the edges) has 12 nearest neighbors.
 """
@@ -47,8 +42,12 @@ function getnn()
 	# remove same atom pairs from nn list
 	removeiipairs!(nn)
 
-	# output as 528 length array of arrays
-	return nn
+	# nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
+	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
+	nn_molly=NeighborList(length(nntuples), nntuples)
+
+	# output as 528 length array of arrays and molly neighbor object
+	return nn,nn_molly
 end
 
 ############################################################################################################

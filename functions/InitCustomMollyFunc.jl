@@ -2,10 +2,6 @@
 
 ############################################################################################################
 
-using Molly
-
-############################################################################################################
-
 # interaction for Au slab equilibration
 struct AuSlabInteraction <: PairwiseInteraction
     nl_only::Bool
@@ -50,7 +46,7 @@ end
         F .|> sysunits
     else
         # tmp step counter
-        if i==au.N[1]
+        if i==au.N[1] && atom_j.index==526
             println("Step $step_no")
             global step_no+=1
         end
@@ -90,4 +86,21 @@ end
 
     # total V on atom i. divide by 2 because of v definition
     V=sum(Vij)/2
+end
+
+############################################################################################################
+
+# custom neighbor finder for molly compatibility
+struct MyNeighborFinder
+end
+
+############################################################################################################
+
+# neighbor finding function for custom neighbor finder. form copied from molly doc. just returns same neighbors each time.
+function Molly.find_neighbors(s,
+                        nf::MyNeighborFinder,
+                        current_neighbors=nothing,
+                        step_n::Integer=0;
+                        n_threads::Integer=Threads.nthreads())
+    nn_molly
 end

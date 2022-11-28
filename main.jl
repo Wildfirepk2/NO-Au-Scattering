@@ -4,6 +4,7 @@
 ############################################################################################################
 
 # initialize all functions
+include("functions/Dependencies.jl")
 include("functions/InitMDUnits.jl")
 include("functions/InitAllParams.jl")
 include("functions/InitAllAuNOVFunc.jl")
@@ -40,8 +41,9 @@ no=initNOParams()
 # 3 x N matrix. xyz coords of each Au atom stored in columns
 rAu=initAuCoords()
 
-# array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
-nn=getnn()
+# nn: array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
+# nn_molly: molly neighbor object. same as nn. for molly compatibility
+nn,nn_molly=getnn()
 
 # array of matrices. initial distances to nearest neighbors for each atom. nn xyz coords stored in columns
 r0ij=getdrij(rAu)
@@ -83,7 +85,7 @@ const stepslogging=10
 const scalefactor=1000
 
 ### description of run
-rundesc="au 5 step PE v2"
+rundesc="au 5 step nn integ"
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -109,8 +111,8 @@ sys_Au = System(
     # initializing atoms in system
     atoms=[Atom(index=i, mass=au.m[1]) for i in 1:au.N[1]],
 
-    # system bound by custom Au slab interactions 
-    pairwise_inters=(AuSlabInteraction(false),),
+    # system bound by custom Au slab interactions. using neighbor list=true
+    pairwise_inters=(AuSlabInteraction(true),),
 
     # initial atom coordinates. using static arrays (SA) for Molly compatibility
     coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
@@ -120,6 +122,9 @@ sys_Au = System(
 
     # system boundary. is periodic
     boundary=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1]),
+
+    # using custom neighbor finder
+    neighbor_finder=MyNeighborFinder(),
 
     # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(

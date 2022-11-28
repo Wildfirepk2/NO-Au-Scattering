@@ -2,11 +2,6 @@
 
 ############################################################################################################
 
-using GLMakie
-using Dates
-
-############################################################################################################
-
 """
 output atom coords at ith logging point to csv. default path is current directory. used only in outputallsyscoords but can be called independently
 """

@@ -6,12 +6,6 @@
 
 ############################################################################################################
 
-using DataFrames
-using CSV
-import PhysicalConstants.CODATA2018: N_A, k_B # Avogadro's number and Boltzmann's constant with Unitful units
-
-############################################################################################################
-
 function initAuParams()
 	# initialize Au parameters from input file
 	file="input files/au params.csv"

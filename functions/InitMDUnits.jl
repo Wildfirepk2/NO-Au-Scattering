@@ -12,10 +12,10 @@
 
 ###########################################################################################
 
-using Unitful
+# necessary line for custom units
 Unitful.register(@__MODULE__)
 
-#create MD units. @unit symbol unit_label description definition false
+# create MD units. @unit symbol unit_label description definition false
 @unit m_MD "m_MD" Mass_MD 1u"u" false
 @unit d_MD "d_MD" Distance_MD 1u"Å" false
 @unit t_MD "t_MD" Time_MD 1u"10fs" false
