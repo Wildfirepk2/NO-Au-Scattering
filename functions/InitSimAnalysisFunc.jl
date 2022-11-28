@@ -196,10 +196,18 @@ function outputsysinfo(sys,rundesc,systype)
     outputallsyscoords(sys,mainpath)
     outputsysE(sys,systype,mainpath)
 
-    # output final forces/velocities to csv in separate folder
-    laststeppath=mkpath("$mainpath/last step")
-    i_lastforce=length(sys.loggers.forces.history)
-    i_lastvel=length(sys.loggers.velocities.history)
-    outputsysforces(sys,i_lastforce,laststeppath)
-    outputsysvelocities(sys,i_lastvel,laststeppath)
+    # output all forces/velocities to csv in separate folder
+    fvpath=mkpath("$mainpath/forces")
+    velpath=mkpath("$mainpath/velocities")
+    for i in 1:length(sys.loggers.forces.history)
+        outputsysforces(sys,i,fvpath)
+        outputsysvelocities(sys,i,velpath)
+    end
+
+    # # output final forces/velocities to csv in separate folder
+    # laststeppath=mkpath("$mainpath/last step")
+    # i_lastforce=length(sys.loggers.forces.history)
+    # i_lastvel=length(sys.loggers.velocities.history)
+    # outputsysforces(sys,i_lastforce,laststeppath)
+    # outputsysvelocities(sys,i_lastvel,laststeppath)
 end

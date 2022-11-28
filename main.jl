@@ -36,6 +36,28 @@ no=initNOParams()
 
 ############################################################################################################
 
+# MD related variables
+
+# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
+const auatomcutoff=397
+
+# log parameters after n steps. may put in param var
+const stepslogging=10
+
+### scale down factor on steps for debugging. f=1 no scaling.
+const scalefactor=1000
+
+### description of run
+rundesc="au 5 step faster F-PE all step info"
+
+# actual steps for au equilibration. maybe edit later to always be divisable by 10
+const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
+
+# actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
+const actsteplog = steps_eq<100 ? 1 : stepslogging
+
+############################################################################################################
+
 # main variables
 
 # 3 x N matrix. xyz coords of each Au atom stored in columns
@@ -73,28 +95,6 @@ NTRAP = 0
 
 ############################################################################################################
 
-# MD related variables
-
-# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
-const auatomcutoff=397
-
-# log parameters after n steps. may put in param var
-const stepslogging=10
-
-### scale down factor on steps for debugging. f=1 no scaling.
-const scalefactor=1000
-
-### description of run
-rundesc="au 5 step NN F-PE"
-
-# actual steps for au equilibration. maybe edit later to always be divisable by 10
-const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
-
-# actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
-const actsteplog = steps_eq<100 ? 1 : stepslogging
-
-############################################################################################################
-
 # Au slab equilibration (MD) using Molly
 
 # defining MD propagation method (velocity verlet)
@@ -129,8 +129,8 @@ sys_Au = System(
     # tracking parameters wrt time. value in parentheses is number of time steps
     loggers=(
         # capture velocities and forces at last time step
-        velocities=VelocityLogger(steps_eq),
-        forces=ForceLogger(steps_eq),
+        velocities=VelocityLogger(actsteplog),
+        forces=ForceLogger(actsteplog),
 
         # checking energy conservation
         et=TotalEnergyLogger(actsteplog),

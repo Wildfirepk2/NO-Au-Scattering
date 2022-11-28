@@ -11,7 +11,7 @@ end
 
 # force function for Au slab equilibration. calculating F for each atom. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 # see roy art, p7, eq 20. see fortran GetFNN2
-#= @inline @inbounds =# function Molly.force(inter::AuSlabInteraction,
+@inline @inbounds function Molly.force(inter::AuSlabInteraction,
                         vec_ij,
                         coord_i,
                         coord_j,
@@ -27,6 +27,21 @@ end
 
     # fetch system's force units. needed for Molly compatibility. may change later
     sysunits=sys_Au.force_units
+
+    # # dist of nn pair away from equilibrium. static array
+    # rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
+
+    # # force nn pair exerts on atom i. static array
+    # Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
+
+    # # return force in system units
+    # Fij .|> sysunits
+
+    # # tmp step counter. updates when loop reaches cutoff atom/394 pair
+    # if i==auatomcutoff-1 && j==394
+    #     println("Step $step_no")
+    #     global step_no+=1
+    # end
 
     # no forces on atoms in last layer
     if i<auatomcutoff
@@ -56,7 +71,7 @@ end
 
 # potential energy (V) for Au slab equilibration. calculating V for each atom. molly will sum all Vs. similar to force function. inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 # see roy art, p7, eq 20. see fortran GetVNN2
-#= @inline @inbounds =# function Molly.potential_energy(inter::AuSlabInteraction,
+@inline @inbounds function Molly.potential_energy(inter::AuSlabInteraction,
                           dr,
                           coord_i,
                           coord_j,
