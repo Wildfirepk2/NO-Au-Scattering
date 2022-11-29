@@ -15,7 +15,7 @@ end
     fdr = force(inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary, weight_14)
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
-    fs[i] += fdr_ustrip
+    fs[i] -= fdr_ustrip
     # println("using custom force function")
     return nothing
 end
