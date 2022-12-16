@@ -45,7 +45,7 @@ const auatomcutoff=397
 const stepslogging=10
 
 ### scale down factor on steps for debugging. f=1 no scaling.
-scalefactor=0.25
+scalefactor=0.05
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -54,7 +54,7 @@ const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of run
-rundesc="au $steps_eq steps-same"
+rundesc="au $steps_eq steps-last fv"
 
 ############################################################################################################
 
@@ -63,12 +63,12 @@ rundesc="au $steps_eq steps-same"
 # 3 x N matrix. xyz coords of each Au atom stored in columns
 rAu=initAuCoords()
 
+# Molly object. simulation box dimensions. periodic in x,y directions. needed in other areas outside Molly
+simboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
+
 # nn: array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
 # nn_molly: molly neighbor object. same as nn. for molly compatibility
 nn,nn_molly=getnn()
-
-# Molly object. simulation box dimensions. periodic in x,y directions. needed in other areas outside Molly
-simboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
 
 # array of matrices. initial distances to nearest neighbors for each atom. nn xyz coords stored in columns
 r0ij=getdrij(rAu)
@@ -132,11 +132,11 @@ sys_Au = System(
     # using custom neighbor finder
     neighbor_finder=AuNeighborFinder(),
 
-    # tracking parameters wrt time. value in parentheses is number of time steps
+    # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_eq, default steps: set to actsteplog
     loggers=(
         # capture velocities and forces at last time step
-        velocities=VelocityLogger(actsteplog),
-        forces=ForceLogger(actsteplog),
+        velocities=VelocityLogger(steps_eq),
+        forces=ForceLogger(steps_eq),
 
         # checking energy conservation
         et=TotalEnergyLogger(actsteplog),
