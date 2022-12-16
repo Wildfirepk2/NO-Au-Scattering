@@ -28,12 +28,14 @@ outputs 1st nearest neighbors (nn) for each Au atom as array of arrays and neigh
 employs NearestNeighbors package. Au's crystal structure is fcc. thus, each atom (except those at the edges) has 12 nearest neighbors.
 """
 function getnn()
-	# stripping units for NearestNeighbors compatibility
-	rAu_nounit=ustrip(rAu)
-	dnn_nounit=ustrip(au.dnn[1])
+	# stripping units for NearestNeighbors compatibility. standardizing units to Angstroms
+	rAu_nounit=ustrip.(u"Å",rAu)
+	dnn_nounit=ustrip(u"Å",au.dnn[1])
+	PBC_nounit=ustrip.(u"Å",simboxdims)
+	PBC=PeriodicEuclidean(PBC_nounit) # simulation box with periodic boundary conditions
 
-	# initializing coordinates for nearest neighbor search
-	tree=KDTree(rAu_nounit)
+	# initializing coordinates for nearest neighbor search. BallTree for PBC compatibility. tested to be same as BruteTree (purely distance searching)
+	tree=BallTree(rAu_nounit, PBC)
 
 	# search for all points within distance r. +1 for rounding effects
 	r=dnn_nounit+1
@@ -78,14 +80,11 @@ function getnnimatrix(rAu,nni,i)
 	# atom i coordinates
     icoords=rAu[:,i]
 
-	# atom i nn coordinates in array
-    nnicoords=[rAu[:,j] for j in nni]
+	# nn distances from atom i accounting for periodic boundary conditions
+	dists_to_nns=[vector(icoords,rAu[:,j],simboxdims) for j in nni]
 
-	# format nn coordinates as matrix. xyz coords stored in columns
-    nnimatrix=reduce(hcat,nnicoords)
-
-	# output nn distances from atom i as matrix. xyz coords stored in columns
-    nnimatrix=nnimatrix.-icoords
+	# output dists as matrix for function compatibility. xyz coords stored in columns. may change later
+	reduce(hcat,dists_to_nns)
 end
 
 ############################################################################################################
@@ -99,20 +98,6 @@ see roy art, p7, eq 20
 """
 function getdrij(rAu)
     [getnnimatrix(rAu,nn[i],i) for i in eachindex(nn)]
-end
-
-############################################################################################################
-
-"""
-for Molly force function
-"""
-function getdrij(atom_i,coord_i)
-	i=atom_i.index
-
-	# atom i nn coordinates in array
-    nnicoords=[coords[:,j] for j in nn[i]]
-
-	[nnicoords[i]-coord_i for i in eachindex(nnicoords)]
 end
 
 ############################################################################################################
@@ -160,11 +145,8 @@ outputs case number for each atom's nn's as array of arrays.
 see begbie p191 for cases
 """
 function getcase()
-	# transform Au coordinates to 100
-	rAut=transformAuCoord(rAu)
-
-	# find nn distances for each atom
-	rijt=getdrij(rAut)
+	# transform nn distances for each atom to 100
+	rijt=[transformAuCoord(r0ij[i]) for i in eachindex(r0ij)]
 
 	# scale distances by a/2
 	a=au.a[1]

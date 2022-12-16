@@ -11,39 +11,22 @@ function initAuParams()
 	file="input files/au params.csv"
 	au=CSV.read(file,DataFrame)
 
-	# add units. assuming A from unit system
+	# add units. assuming A from unit system. see notebook for slab info
 	au.x*=u"Å"
 	au.y*=u"Å"
 	au.z*=u"Å"
 	au.dnn*=u"Å"
 	au.a*=u"Å"
-	au.aPBCx*=u"Å" # 1 layer of space beyond slab boundary
-	au.aPBCy*=u"Å" # 2 layers of space beyond slab boundary
+	au.aPBCx*=u"Å" # 1 layer of space beyond slab boundary for periodic boundary conditions
+	au.aPBCy*=u"Å" # 1 layer of space beyond slab boundary for periodic boundary conditions
 	au.aPBCz*=u"Å"
 	au.m*=u"u"
 
-	# layer spacings. for better viewing of coords in molly. may change approach later.
-	xspc=1.476085406u"Å"
-	yspc=0.852218306u"Å"
-	zspc=2.410437374u"Å"
-
-	# shift atoms (y dir) to give 2 layers spacing before slab. original pos: -1 layer.
-	au.y.+=3*yspc
-
-	# shift aPBCy by same amount to keep spacing
-	au.aPBCy[1]+=3*yspc
-
-	# shift atoms (x dir) to give 1 layer spacing before slab. original pos: 0 layer.
-	au.x.+=xspc
-
-	# shift aPBCx by same amount to keep spacing
-	au.aPBCx[1]+=xspc
+	# shift up atoms such that back layer at y=0. needed for Molly compatibility/giving 1 layer of space
+	au.y.-=minimum(au.y)
 
 	# shift up atoms such that back layer at z=0. needed for Molly compatibility
 	au.z.-=minimum(au.z)
-
-	# shift atoms (z dir) to give 1 layer spacing before slab. original pos: 0 layer.
-	au.z.+=zspc
 
 	# set infinite height for system. may revert later. best for Molly
 	au.aPBCz[1]=Inf*u"Å"
@@ -115,7 +98,7 @@ function initPESParamIonic()
 
 	# adding NA for compatibility with kJ/mol
 	ion.ϕ*=u"eV"*N_A
-	ion.Ea*=u"eV"*N_A
+	ion.Ea*=u"eV"*N_A # is negative
 
 	return ion
 end
