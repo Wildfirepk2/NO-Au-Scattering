@@ -45,7 +45,7 @@ function getnn()
 	removeiipairs!(nn)
 
 	# nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
-	nntuples=[(i,nn[i][j],false) for i in 1:auatomcutoff-1 for j in eachindex(nn[i])]
+	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
 	nn_molly=NeighborList(length(nntuples), nntuples)
 
 	# output as 528 length array of arrays and molly neighbor object

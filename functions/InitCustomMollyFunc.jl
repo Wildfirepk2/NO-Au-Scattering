@@ -15,7 +15,7 @@ end
     fdr = force(inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary, weight_14)
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
-    fs[i] -= fdr_ustrip
+    fs[i] -= fdr_ustrip # negative force just works. investigate later
     # println("using custom force function")
     return nothing
 end
@@ -43,43 +43,45 @@ end
     # fetch system's force units. needed for Molly compatibility. may change later
     sysunits=sys_Au.force_units
 
-    # dist of nn pair away from equilibrium. static array
-    rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
+    # iterating through all NNs. may change later
 
-    # force nn pair exerts on atom i. static array
-    Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
+    # # dist of nn pair away from equilibrium. static array
+    # rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
 
-    # tmp step counter. updates when loop reaches cutoff atom/394 pair
-    if i==auatomcutoff-1 && j==394
-        println("Step $step_no")
-        global step_no+=1
-    end
+    # # force nn pair exerts on atom i. static array
+    # Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
 
-    # return force in system units
-    Fij .|> sysunits
-
-    # # no forces on atoms in last layer
-    # if i<auatomcutoff
-    #     # normal operation
-
-    #     # dist of nn pair away from equilibrium. static array
-    #     rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
-
-    #     # force nn pair exerts on atom i. static array
-    #     Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
-
-    #     # return force in system units
-    #     Fij .|> sysunits
-    # else
-    #     # tmp step counter. updates when loop reaches atom N/526 pair
-    #     if i==au.N[1] && j==526
-    #         println("Step $step_no")
-    #         global step_no+=1
-    #     end
-
-    #     # no force on Au atoms
-    #     SVector{3}(zeros(3)sysunits)
+    # # tmp step counter. updates when loop reaches cutoff atom/394 pair
+    # if i==auatomcutoff-1 && j==394
+    #     println("Step $step_no")
+    #     global step_no+=1
     # end
+
+    # # return force in system units
+    # Fij .|> sysunits
+
+    # no forces on atoms in last layer
+    if i<auatomcutoff
+        # normal operation
+
+        # dist of nn pair away from equilibrium. static array
+        rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
+
+        # force nn pair exerts on atom i. static array
+        Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
+
+        # return force in system units
+        Fij .|> sysunits
+    else
+        # tmp step counter. updates when loop reaches atom N/526 pair
+        if i==au.N[1] && j==526
+            println("Step $step_no")
+            global step_no+=1
+        end
+
+        # no force on Au atoms
+        SVector{3}(zeros(3)sysunits)
+    end
 end
 
 ############################################################################################################
