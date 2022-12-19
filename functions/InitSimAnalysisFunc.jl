@@ -145,35 +145,48 @@ end
 """
 print txt file with summary of run.
 """
-function outputsummary(sys,runpath)
-    # create folder for summary at $path
-    summarypath=mkpath("$runpath/summary")
-
-    # number steps in run
-    nsteps=sys.loggers.forces.n_steps
-
-    # time step of run (dt)
-    dt=simulator.dt
-
+function outputsummary(sys,simsteps=NaN,runtime=NaN,runpath=".")
     # number of atoms in system
     natoms=length(sys.atoms)
 
-    # number of atoms in system
-    nsteps=length(sys.loggers.forces.history)
-
-    # time step of run (dt)
+    # time step of run (dt) in given/MD units. rounding due to floating point errors
     dt=simulator.dt
+    dtmd=round(u"t_MD",dt;digits=2)
 
-    # total time of run
-    ttotal=nsteps*dt
+    # total time of run in given/MD units. rounding due to floating point errors
+    ttotal=simsteps*dt
+    ttotalmd=round(u"t_MD",ttotal;digits=2)
+
+    # number of steps between logging points for quantities
+    stepsbtwnlogsCoords=sys.loggers.coords.n_steps
+    stepsbtwnlogsE=sys.loggers.et.n_steps
+    stepsbtwnlogsF=sys.loggers.forces.n_steps
+    stepsbtwnlogsV=sys.loggers.velocities.n_steps
+
+    # time step between logging points for quantities in given/MD units. rounding due to floating point errors
+    logdtCoords=stepsbtwnlogsCoords*dt
+    logdtE=stepsbtwnlogsE*dt
+    logdtF=stepsbtwnlogsF*dt
+    logdtV=stepsbtwnlogsV*dt
+    logdtCoordsmd=round(u"t_MD",logdtCoords;digits=2)
+    logdtEmd=round(u"t_MD",logdtE;digits=2)
+    logdtFmd=round(u"t_MD",logdtF;digits=2)
+    logdtVmd=round(u"t_MD",logdtV;digits=2)
 
     # write to txt
-    file="$summarypath/summary.txt"
+    file="$runpath/summary.txt"
     open(file,"w") do io
         println(io,"Number of atoms: $natoms")
-        println(io,"Number of steps: $nsteps")
-        println(io,"Time step: $dt")
-        println(io,"Total time: $ttotal")
+        println(io,"Number of steps: $simsteps")
+        println(io,"Time step: $dt ($dtmd)")
+        println(io,"Total time: $ttotal ($ttotalmd)")
+        println(io,"Simulation runtime: $runtime")
+        println(io)
+        println(io,"Time period between logging quantities")
+        println(io,"    Coords: $logdtCoords ($logdtCoordsmd)")
+        println(io,"    Energies: $logdtE ($logdtEmd)")
+        println(io,"    Forces: $logdtF ($logdtFmd)")
+        println(io,"    Velocities: $logdtV ($logdtVmd)")
     end
 end
 
@@ -184,30 +197,47 @@ output all system info. animation. logger stuff. forces/velocities last step
 
 need to give description of run as string and specify type of system ("Au" or "NO/Au"). 
 """
-function outputsysinfo(sys,rundesc,systype)
-    # make folder to store results of current run
-    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
-    mainpath=mkpath("results/$rundesc--$date")
-
-    # output animation of simulation in $mainpath
-    visualize(sys.loggers.coords, sys.boundary, "$mainpath/animation.mp4";show_boundary=false)
+function outputsysinfo(sys,rundesc,systype,path=".")
+    # output animation of simulation in $path
+    visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
 
     # output coords/energies to csv in separate folder
-    outputallsyscoords(sys,mainpath)
-    outputsysE(sys,systype,mainpath)
+    outputallsyscoords(sys,path)
+    outputsysE(sys,systype,path)
 
     # output all forces/velocities to csv in separate folder
-    fvpath=mkpath("$mainpath/forces")
-    velpath=mkpath("$mainpath/velocities")
+    fvpath=mkpath("$path/forces")
+    velpath=mkpath("$path/velocities")
     for i in 1:length(sys.loggers.forces.history)
         outputsysforces(sys,i,fvpath)
         outputsysvelocities(sys,i,velpath)
     end
 
     # # output final forces/velocities to csv in separate folder
-    # laststeppath=mkpath("$mainpath/last step")
+    # laststeppath=mkpath("$path/last step")
     # i_lastforce=length(sys.loggers.forces.history)
     # i_lastvel=length(sys.loggers.velocities.history)
     # outputsysforces(sys,i_lastforce,laststeppath)
     # outputsysvelocities(sys,i_lastvel,laststeppath)
+end
+
+############################################################################################################
+
+"""
+run Au slab equilibration and output run info to results folder
+"""
+function AuSlabEquilibration(sys,simulator,steps)
+    # make folder to store results of current run
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    path=mkpath("results/$rundesc--$date")
+
+    # run MD+give run time
+    runtimeAu=@elapsed simulate!(sys, simulator, steps)
+    runtimeAu*=u"s"
+
+    # output all system data: animation, coords, last velocities/forces
+    outputsysinfo(sys,rundesc,"Au",path)
+
+    # output summary of run
+    outputsummary(sys,steps,runtimeAu,path)
 end

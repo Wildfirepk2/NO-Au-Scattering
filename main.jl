@@ -44,8 +44,8 @@ const auatomcutoff=397
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
-### scale down factor on steps for debugging. f=1 no scaling.
-scalefactor=1
+### scale down factor on steps for debugging. f=1 no scaling. f=5000: 1 step
+scalefactor=25
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -54,7 +54,7 @@ const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of run
-rundesc="au $steps_eq steps-same"
+rundesc="au $steps_eq steps-summary file"
 
 ############################################################################################################
 
@@ -154,8 +154,5 @@ sys_Au = System(
 # tmp step counter
 step_no=1
 
-# run MD. cutting down steps for debugging
-simulate!(sys_Au, simulator, steps_eq)
-
-# output all system data: animation, coords, last velocities/forces
-outputsysinfo(sys_Au,rundesc,"Au")
+# running MD + output results
+AuSlabEquilibration(sys_Au, simulator, steps_eq)
