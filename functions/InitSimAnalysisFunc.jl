@@ -41,8 +41,9 @@ end
 simple version of write_xlsx for outputing energies. called in outputsysE
 """
 function write_xlsx(file, df::DataFrame)
-    data = collect(eachcol(df))
-    cols = names(df)
+    dfnounits=ustrip.(df)
+    data = collect(eachcol(dfnounits))
+    cols = names(dfnounits)
     XLSX.writetable(file, data, cols)
 end
 
@@ -73,15 +74,54 @@ end
 
 """
 output atom coords w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
+
+firstlastonly for speed. XLSX slow.
 """
-function outputallsyscoords(sys,path=".")
+function outputallsyscoords(sys,path=".",firstlastonly=true)
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history
 
-    # write excel files for ea time step. store in coords folder
-    for i in eachindex(datasrc)
-        outputsyscoords(sys,i,path)
+    if firstlastonly
+        # write excel file for first/last time step only.
+        outputsyscoords(sys,1,path)
+        outputsyscoords(sys,length(datasrc),path)
+    else
+        # write excel file for ea time step
+        for i in eachindex(datasrc)
+            outputsyscoords(sys,i,path)
+        end
     end
+end
+
+############################################################################################################
+"""
+output graph given DataFrame. called in outputsysE
+"""
+function outputgraph(desc,df,path=".")
+    # grabbing key data from df
+    colnames=names(df)
+    numcols=ncol(df)
+    dffirstrow=first.(eachcol(df))
+    colunittypes=qtytolabel.(dffirstrow)
+    colunits=unit.(dffirstrow)
+    dfnounits=ustrip.(df)
+
+    # create plot obj
+    xunittype=colunittypes[begin]
+    yunittype=colunittypes[begin+1]
+    xunit=colunits[begin]
+    yunit=colunits[begin+1]
+    fig=scatterlines(dfnounits[!,begin],dfnounits[!,begin+1],label=colnames[begin+1];
+        axis = (; title = desc, xlabel = "$xunittype ($xunit)", ylabel = "$yunittype ($yunit)"))
+
+    # add to plot obj
+    for i in 2:numcols-1
+        scatterlines!(dfnounits[!,begin],dfnounits[!,i+1],label=colnames[i+1])
+    end
+    axislegend()
+
+    # save plot to $path
+    save("$path/Evt.png", fig)
 end
 
 ############################################################################################################
@@ -96,33 +136,22 @@ function outputsysE(sys,systype,path=".")
     # time step of run (dt)
     dt=simulator.dt
 
-    # tmp vars for time, kinetic, potential, and total energies. converted to MD units then unit stripped
-    time=ustrip([i*dt for i in 0:nsteps] .|> u"t_MD")
-    KE=ustrip(sys.loggers.ke.history .|> u"e_MD")
-    PE=ustrip(sys.loggers.pe.history .|> u"e_MD")
-    TE=ustrip(sys.loggers.et.history .|> u"e_MD")
+    # tmp vars for time, kinetic, potential, and total energies + converted to MD units
+    time=[i*dt for i in 0:nsteps] .|> u"t_MD"
+    KE=sys.loggers.ke.history .|> u"e_MD"
+    PE=sys.loggers.pe.history .|> u"e_MD"
+    TE=sys.loggers.et.history .|> u"e_MD"
     
     # write to excel file at $path
     data=DataFrame(t=time,KE=KE,PE=PE,TE=TE)
     file="$path/sysE.xlsx"
     write_xlsx(file,data)
 
-    ## make E vs t graph. possibly make more generic in future?
-
     # graph description based on system type
     graphdesc = systype=="Au" ? "Au slab equilibration: Checking energy conservation" : "NO/Au Scattering: Checking energy conservation"
 
-    # create plot obj w params. add KE series. 
-    fig,ax,KEseries=scatterlines(time,KE,label="KE";
-    axis = (; title = graphdesc, xlabel = "Time (t_MD)", ylabel = "Energy (e_MD)"))
-
-    # add PE/TE series
-    PEseries=scatterlines!(time,PE,label="PE")
-    TEseries=scatterlines!(time,TE,label="TE")
-    axislegend()
-    
-    # save plot to $path
-    save("$path/Evt.png", fig)
+    # make energy vs time graph
+    outputgraph(graphdesc,data,path)
 end
 
 ############################################################################################################

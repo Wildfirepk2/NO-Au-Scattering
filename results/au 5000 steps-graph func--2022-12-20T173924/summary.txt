@@ -1,0 +1,11 @@
+Number of atoms: 528
+Number of steps: 5000
+Time step: 0.1 fs (0.01 t_MD)
+Total time: 500.0 fs (50.0 t_MD)
+Simulation runtime: 115.287999022 s
+
+Time period between logging quantities
+    Coords: 1.0 fs (0.1 t_MD)
+    Energies: 1.0 fs (0.1 t_MD)
+    Forces: 500.0 fs (50.0 t_MD)
+    Velocities: 500.0 fs (50.0 t_MD)

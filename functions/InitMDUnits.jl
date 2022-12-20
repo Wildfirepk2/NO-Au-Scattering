@@ -22,3 +22,19 @@ Unitful.register(@__MODULE__)
 @unit f_MD "f_MD" Frequency_MD 1u"100THz" false
 @unit v_MD "v_MD" Velocity_MD 1u"10^4*m/s" false
 @unit e_MD "e_MD" Energy_MD 1u"100kJ/mol" false
+
+
+###########################################################################################
+
+# create new Unitful type. needed for mapping to labels
+@derived_dimension EnergyPerMole Unitful.𝐌*Unitful.𝐋^2/Unitful.𝐓^2/Unitful.𝐍
+
+"""
+map Unitful quantity to label. for making graph labels in outputgraph. may change later.
+"""
+function qtytolabel(qty::Unitful.Quantity)
+    types=[Unitful.Mass,Unitful.Length,Unitful.Time,Unitful.Frequency,Unitful.Velocity,EnergyPerMole]
+    labels=["Mass","Length","Time","Frequency","Velocity","Energy"]
+    idx=findfirst(isa.(qty,types))
+    labels[idx]
+end
