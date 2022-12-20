@@ -54,7 +54,7 @@ const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of run
-rundesc="au $steps_eq steps-xlsx"
+rundesc="au $steps_eq steps-no subfolders"
 
 ############################################################################################################
 

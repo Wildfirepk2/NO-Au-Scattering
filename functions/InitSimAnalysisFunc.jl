@@ -75,15 +75,12 @@ end
 output atom coords w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
 """
 function outputallsyscoords(sys,path=".")
-    # create folder for coords at $path
-    coordpath=mkpath("$path/coords")
-
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history
 
     # write excel files for ea time step. store in coords folder
     for i in eachindex(datasrc)
-        outputsyscoords(sys,i,coordpath)
+        outputsyscoords(sys,i,path)
     end
 end
 
@@ -93,9 +90,6 @@ end
 output system energies w time to excel file + make graph
 """
 function outputsysE(sys,systype,path=".")
-    # create folder for energies at $path
-    Epath=mkpath("$path/energies")
-
     # number steps in run
     nsteps=length(sys.loggers.et.history)-1
 
@@ -108,9 +102,9 @@ function outputsysE(sys,systype,path=".")
     PE=ustrip(sys.loggers.pe.history .|> u"e_MD")
     TE=ustrip(sys.loggers.et.history .|> u"e_MD")
     
-    # write to excel file at $Epath
+    # write to excel file at $path
     data=DataFrame(t=time,KE=KE,PE=PE,TE=TE)
-    file="$Epath/sysE.xlsx"
+    file="$path/sysE.xlsx"
     write_xlsx(file,data)
 
     ## make E vs t graph. possibly make more generic in future?
@@ -127,8 +121,8 @@ function outputsysE(sys,systype,path=".")
     TEseries=scatterlines!(time,TE,label="TE")
     axislegend()
     
-    # save plot to $Epath
-    save("$Epath/Evt.png", fig)
+    # save plot to $path
+    save("$path/Evt.png", fig)
 end
 
 ############################################################################################################
@@ -159,15 +153,12 @@ end
 output atom forces w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
 """
 function outputallsysforces(sys,path=".")
-    # create folder for forces at $path
-    forcepath=mkpath("$path/forces")
-
     # forces from molly's loggers
     datasrc=sys.loggers.forces.history
 
     # write excel files for ea time step. store in forces folder
     for i in eachindex(datasrc)
-        outputsysforces(sys,i,forcepath)
+        outputsysforces(sys,i,path)
     end
 end
 
@@ -198,15 +189,12 @@ end
 output atom velocities w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
 """
 function outputallsysvelocities(sys,path=".")
-    # create folder for velocities at $path
-    velocitypath=mkpath("$path/velocities")
-
     # velocities from molly's loggers
     datasrc=sys.loggers.velocities.history
 
     # write excel files for ea time step. store in velocities folder
     for i in eachindex(datasrc)
-        outputsysvelocities(sys,i,velocitypath)
+        outputsysvelocities(sys,i,path)
     end
 end
 
