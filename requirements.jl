@@ -7,6 +7,7 @@ dependencies = [# for Au slab
                 # read/write files
                 "DataFrames", 
                 "CSV", 
+                "XLSX",
 
                 # unit integration
                 "Unitful",

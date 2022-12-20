@@ -2,15 +2,58 @@
 
 ############################################################################################################
 
+# extend length method for XLSXFile to give number of sheets. may revert later.
+Base.length(xf::XLSX.XLSXFile) = XLSX.sheetcount(xf)
+
 """
-output atom coords at ith logging point to csv. default path is current directory. used only in outputallsyscoords but can be called independently
+write data to excel file. intermediate function for output functions
+"""
+function write_xlsx(file, i, stepslog, df::DataFrame)
+    # step no of simulation
+    step=(i-1)*stepslog
+
+    # data to go in excel file
+    data = collect(eachcol(df))
+    cols = names(df)
+
+    # if excel file not in directory, create it
+    if !isfile(file)
+        # xf: excel file object
+        XLSX.openxlsx(file, mode="w") do xf
+            sheet = xf[length(xf)]
+            XLSX.writetable!(sheet, data, cols)
+            XLSX.rename!(sheet, "step $step")
+        end
+    else
+        # add sheet to existing file and write to it
+        XLSX.openxlsx(file, mode="rw") do xf
+            XLSX.addsheet!(xf)
+            sheet = xf[length(xf)]
+            XLSX.writetable!(sheet, data, cols)
+            XLSX.rename!(sheet, "step $step")
+        end
+    end
+end
+
+############################################################################################################
+
+"""
+simple version of write_xlsx for outputing energies. called in outputsysE
+"""
+function write_xlsx(file, df::DataFrame)
+    data = collect(eachcol(df))
+    cols = names(df)
+    XLSX.writetable(file, data, cols)
+end
+
+############################################################################################################
+
+"""
+output atom coords at ith logging point to excel file. default path is current directory. used only in outputallsyscoords but can be called independently
 """
 function outputsyscoords(sys,i,path=".")
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
-
-    # step no of simulation
-    step=(i-1)*stepslog
 
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history[i]
@@ -20,16 +63,16 @@ function outputsyscoords(sys,i,path=".")
     ys=ustrip([datasrc[j][2] for j in eachindex(datasrc)] .|> u"d_MD")
     zs=ustrip([datasrc[j][3] for j in eachindex(datasrc)] .|> u"d_MD")
 
-    # write to csv
+    # write to xlsx
     data=DataFrame(x=xs,y=ys,z=zs)
-    file="$path/syscoords-step $step.csv"
-    CSV.write(file,data)
+    file="$path/syscoords.xlsx"
+    write_xlsx(file,i,stepslog,data)
 end
 
 ############################################################################################################
 
 """
-output atom coords w time to csv at path. default path is current directory. used only in outputsysinfo but can be called independently
+output atom coords w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
 """
 function outputallsyscoords(sys,path=".")
     # create folder for coords at $path
@@ -38,7 +81,7 @@ function outputallsyscoords(sys,path=".")
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history
 
-    # write csv files for ea time step. store in coords folder
+    # write excel files for ea time step. store in coords folder
     for i in eachindex(datasrc)
         outputsyscoords(sys,i,coordpath)
     end
@@ -47,7 +90,7 @@ end
 ############################################################################################################
 
 """
-output system energies w time to csv + make graph
+output system energies w time to excel file + make graph
 """
 function outputsysE(sys,systype,path=".")
     # create folder for energies at $path
@@ -65,10 +108,10 @@ function outputsysE(sys,systype,path=".")
     PE=ustrip(sys.loggers.pe.history .|> u"e_MD")
     TE=ustrip(sys.loggers.et.history .|> u"e_MD")
     
-    # write to csv at $Epath
+    # write to excel file at $Epath
     data=DataFrame(t=time,KE=KE,PE=PE,TE=TE)
-    file="$Epath/sysE.csv"
-    CSV.write(file,data)
+    file="$Epath/sysE.xlsx"
+    write_xlsx(file,data)
 
     ## make E vs t graph. possibly make more generic in future?
 
@@ -91,14 +134,11 @@ end
 ############################################################################################################
 
 """
-output forces on atoms at ith logging point to csv. default path is current directory. used only in outputsysinfo but can be called independently
+output atom forces at ith logging point to excel file. default path is current directory. used only in outputallsysforces but can be called independently
 """
 function outputsysforces(sys,i,path=".")
     # logging interval. ie log forces after every $stepslog steps
     stepslog=sys.loggers.forces.n_steps
-
-    # step no of simulation
-    step=(i-1)*stepslog
 
     # forces from molly's loggers
     datasrc=sys.loggers.forces.history[i]
@@ -108,23 +148,36 @@ function outputsysforces(sys,i,path=".")
     fy=ustrip([datasrc[j][2] for j in eachindex(datasrc)] .|> u"e_MD/d_MD")
     fz=ustrip([datasrc[j][3] for j in eachindex(datasrc)] .|> u"e_MD/d_MD")
 
-    # write to csv
+    # write to excel file
     data=DataFrame(Fx=fx,Fy=fy,Fz=fz)
-    file="$path/sysforces-step $step.csv"
-    CSV.write(file,data)
+    file="$path/sysforces.xlsx"
+    write_xlsx(file,i,stepslog,data)
 end
 
 ############################################################################################################
-
 """
-output velocities on atoms at ith logging point to csv. default path is current directory. used only in outputsysinfo but can be called independently
+output atom forces w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
+"""
+function outputallsysforces(sys,path=".")
+    # create folder for forces at $path
+    forcepath=mkpath("$path/forces")
+
+    # forces from molly's loggers
+    datasrc=sys.loggers.forces.history
+
+    # write excel files for ea time step. store in forces folder
+    for i in eachindex(datasrc)
+        outputsysforces(sys,i,forcepath)
+    end
+end
+
+############################################################################################################
+"""
+output atom velocities at ith logging point to excel file. default path is current directory. used only in outputallsysvelocities but can be called independently
 """
 function outputsysvelocities(sys,i,path=".")
     # logging interval. ie log velocities after every $stepslog steps
     stepslog=sys.loggers.velocities.n_steps
-
-    # step no of simulation
-    step=(i-1)*stepslog
 
     # velocities from molly's loggers
     datasrc=sys.loggers.velocities.history[i]
@@ -134,10 +187,27 @@ function outputsysvelocities(sys,i,path=".")
     vy=ustrip([datasrc[j][2] for j in eachindex(datasrc)] .|> u"v_MD")
     vz=ustrip([datasrc[j][3] for j in eachindex(datasrc)] .|> u"v_MD")
 
-    # write to csv
-    data=DataFrame(vx=vx,vy=vy,vz=vz)
-    file="$path/sysvelocities-step $step.csv"
-    CSV.write(file,data)
+    # write to excel file
+    data=DataFrame(Vx=vx,Vy=vy,Vz=vz)
+    file="$path/sysvelocities.xlsx"
+    write_xlsx(file,i,stepslog,data)
+end
+
+############################################################################################################
+"""
+output atom velocities w time to excel file at path. default path is current directory. used only in outputsysinfo but can be called independently
+"""
+function outputallsysvelocities(sys,path=".")
+    # create folder for velocities at $path
+    velocitypath=mkpath("$path/velocities")
+
+    # velocities from molly's loggers
+    datasrc=sys.loggers.velocities.history
+
+    # write excel files for ea time step. store in velocities folder
+    for i in eachindex(datasrc)
+        outputsysvelocities(sys,i,velocitypath)
+    end
 end
 
 ############################################################################################################
@@ -193,32 +263,19 @@ end
 ############################################################################################################
 
 """
-output all system info. animation. logger stuff. forces/velocities last step
+output all system info. animation. logger quantities
 
 need to give description of run as string and specify type of system ("Au" or "NO/Au"). 
 """
-function outputsysinfo(sys,rundesc,systype,path=".")
+function outputsysinfo(sys,systype,path=".")
     # output animation of simulation in $path
     visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
 
-    # output coords/energies to csv in separate folder
+    # output quantities to excel file in separate folder
     outputallsyscoords(sys,path)
     outputsysE(sys,systype,path)
-
-    # output all forces/velocities to csv in separate folder
-    fvpath=mkpath("$path/forces")
-    velpath=mkpath("$path/velocities")
-    for i in 1:length(sys.loggers.forces.history)
-        outputsysforces(sys,i,fvpath)
-        outputsysvelocities(sys,i,velpath)
-    end
-
-    # # output final forces/velocities to csv in separate folder
-    # laststeppath=mkpath("$path/last step")
-    # i_lastforce=length(sys.loggers.forces.history)
-    # i_lastvel=length(sys.loggers.velocities.history)
-    # outputsysforces(sys,i_lastforce,laststeppath)
-    # outputsysvelocities(sys,i_lastvel,laststeppath)
+    outputallsysforces(sys,path)
+    outputallsysvelocities(sys,path)
 end
 
 ############################################################################################################
@@ -236,7 +293,7 @@ function AuSlabEquilibration(sys,simulator,steps)
     runtimeAu*=u"s"
 
     # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,rundesc,"Au",path)
+    outputsysinfo(sys,"Au",path)
 
     # output summary of run
     outputsummary(sys,steps,runtimeAu,path)
