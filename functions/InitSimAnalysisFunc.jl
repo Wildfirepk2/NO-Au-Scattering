@@ -130,14 +130,20 @@ end
 output system energies w time to excel file + make graph
 """
 function outputsysE(sys,systype,path=".")
-    # number steps in run
-    nsteps=length(sys.loggers.et.history)-1
+    # logging interval. ie log energies after every $stepslog steps
+    stepslog=sys.loggers.et.n_steps
 
-    # time step of run (dt)
-    dt=simulator.dt
+    # number of logs
+    nsteps=length(sys.loggers.et.history)
+
+    # time step used in simulation
+    simdt=simulator.dt
+
+    # time between logs
+    dt=stepslog*simdt
 
     # tmp vars for time, kinetic, potential, and total energies + converted to MD units
-    time=[i*dt for i in 0:nsteps] .|> u"t_MD"
+    time=[(i-1)*dt for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
     KE=sys.loggers.ke.history .|> u"e_MD"
     PE=sys.loggers.pe.history .|> u"e_MD"
     TE=sys.loggers.et.history .|> u"e_MD"
