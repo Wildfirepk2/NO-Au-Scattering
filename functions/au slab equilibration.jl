@@ -85,4 +85,4 @@ sys_Au = System(
 step_no=1
 
 # running MD + output results
-AuSlabEquilibration(sys_Au, aurundesc, simulator, steps_eq)
+runMDprintresults(sys_Au, aurundesc, simulator, steps_eq)

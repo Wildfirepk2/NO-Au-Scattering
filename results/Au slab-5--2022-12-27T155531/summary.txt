@@ -1,9 +1,9 @@
-Time of run: 2022-12-20 23:55:02
+Time of run: 2022-12-27 15:55:36
 Number of atoms: 528
 Number of steps: 5
 Time step: 0.1 fs (0.01 t_MD)
 Total time: 0.5 fs (0.05 t_MD)
-Simulation runtime: 0.728945366 s
+Simulation runtime: 0.21691056 s
 
 Steps between logging quantities
     Coords: 1

@@ -54,7 +54,7 @@ const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of run
-aurundesc="Au slab-logger v3"
+aurundesc="Au slab"
 
 ############################################################################################################
 
@@ -73,12 +73,18 @@ NTRAP = 0
 ############################################################################################################
 
 # check if Au slab is equilibrated. if not, equilibrate Au slab
+
+# make helper function for outputting index of au folder. adapt for outputting most recent run?
 resultsdir=readdir("results";join=true)
 i_au=findfirst(contains.(resultsdir,"Au slab"))
+
+# leave in main
 if i_au isa Nothing
-    include("functions/au slab equilibration.jl")
-    println("Au slab is equilibrated")
+    runAuSlabEquilibration()
 end
+
+# make file for holding no/au related functions
+# make function for no/au system init. function composed initNO and initeqAu
 resultsdir=readdir("results";join=true)
 i_au=findfirst(contains.(resultsdir,"Au slab"))
 audir=resultsdir[i_au]
@@ -88,3 +94,5 @@ sheets=XLSX.sheetnames(xfcoord)
 sheetlastcoord=sheets[end]
 dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
 aueqcoords=[SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]] for i in 1:nrow(dfcoord)]
+
+# make simulator/system variables for no/au in global. later on put in separate file like au slab equilibration

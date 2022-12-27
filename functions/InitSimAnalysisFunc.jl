@@ -317,9 +317,9 @@ end
 ############################################################################################################
 
 """
-run Au slab equilibration and output run info to results folder
+run MD on a system and output run info to results folder
 """
-function AuSlabEquilibration(sys,desc,simulator,steps)
+function runMDprintresults(sys,desc,simulator,steps)
     # time of run
     date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
     
@@ -330,12 +330,23 @@ function AuSlabEquilibration(sys,desc,simulator,steps)
     dt=simulator.dt
 
     # run MD+give run time
-    runtimeAu=@elapsed simulate!(sys, simulator, steps)
-    runtimeAu*=u"s"
+    runtime=@elapsed simulate!(sys, simulator, steps)
+    runtime*=u"s"
 
     # output all system data: animation, coords, last velocities/forces
     outputsysinfo(sys,dt,desc,path)
 
     # output summary of run
-    outputsummary(sys,dt,steps,runtimeAu,path)
+    outputsummary(sys,dt,steps,runtime,path)
+end
+
+############################################################################################################
+
+"""
+run Au slab equilibration and output run info to results folder
+"""
+function runAuSlabEquilibration()
+    t=@elapsed include("functions/au slab equilibration.jl")
+    println("Au slab is equilibrated")
+    println("Time to run: $t seconds")
 end
