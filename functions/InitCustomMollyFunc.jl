@@ -129,3 +129,10 @@ function Molly.find_neighbors(s,
                         n_threads::Integer=Threads.nthreads())
     nn_molly
 end
+
+############################################################################################################
+
+# interaction for NO/Au scattering
+struct NOAuInteraction <: PairwiseInteraction
+    nl_only::Bool
+end

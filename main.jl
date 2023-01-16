@@ -45,7 +45,7 @@ const auatomcutoff=397
 const stepslogging=10
 
 ### scale down factor on steps for debugging. f=1 no scaling. f=5000: 1 step
-scalefactor=0.05
+scalefactor=5000
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor

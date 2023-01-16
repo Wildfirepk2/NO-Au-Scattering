@@ -125,7 +125,7 @@ function outputgraph(desc,df,path=".")
     axislegend()
 
     # save plot to $path
-    save("$path/Evt.png", fig)
+    save("$path/$yunittype v $xunittype.png", fig)
 end
 
 ############################################################################################################
@@ -272,6 +272,10 @@ function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
     logdtFmd=round(u"t_MD",logdtF;digits=2)
     logdtVmd=round(u"t_MD",logdtV;digits=2)
 
+    # final slab energy in given/MD units. rounding due to floating point errors
+    finalE=sys.loggers.et.history[end]
+    finalEmd=round(u"e_MD",finalE;digits=2)
+
     # write to txt
     file="$runpath/summary.txt"
     open(file,"w") do io
@@ -293,6 +297,35 @@ function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"    Energies: $logdtE ($logdtEmd)")
         println(io,"    Forces: $logdtF ($logdtFmd)")
         println(io,"    Velocities: $logdtV ($logdtVmd)")
+        println(io)
+        println(io,"Final Slab Total Energy: $finalE ($finalEmd)")
+    end
+end
+
+############################################################################################################
+
+"""
+output animation of trajectory for system
+"""
+function outputanimation(sys,path=".")
+    # type of interaction. au or no/au
+    inter_type=typeof(first(sys.pairwise_inters))
+    
+    if inter_type==AuSlabInteraction
+        # output animation of simulation in $path
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
+    elseif inter_type==NOAuInteraction
+        # connecting N and O atoms with purple line
+        connections=[(1,2)]
+        connection_color=[:purple]
+
+        # colors of all atoms
+        NOcolors=[:blue,:red]
+        Aucolors=[:gold for _ in 1:au.N[1]]
+        syscolors=vcat(NOcolors,Aucolors)
+
+        # output animation of simulation in $path
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
     end
 end
 
@@ -305,7 +338,7 @@ run description needs to contain either "Au slab" or "NO/Au"
 """
 function outputsysinfo(sys,dt,systype,path=".")
     # output animation of simulation in $path
-    visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
+    outputanimation(sys,path)
 
     # output quantities to excel file in separate folder
     outputallsyscoords(sys,dt,path)
