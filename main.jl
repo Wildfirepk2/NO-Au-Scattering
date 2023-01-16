@@ -5,12 +5,12 @@
 
 # initialize all functions
 include("functions/Dependencies.jl")
-include("functions/InitMDUnits.jl")
-include("functions/InitAllParams.jl")
-include("functions/InitAllAuNOVFunc.jl")
-include("functions/InitAllAuVFunc.jl")
-include("functions/InitCustomMollyFunc.jl")
-include("functions/InitSimAnalysisFunc.jl")
+include("functions/MDUnits.jl")
+include("functions/SimParams.jl")
+include("functions/AuNOVFunc.jl")
+include("functions/AuVFunc.jl")
+include("functions/CustomMollyFunc.jl")
+include("functions/SimAnalysisFunc.jl")
 
 ############################################################################################################
 
