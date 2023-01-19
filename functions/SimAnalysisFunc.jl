@@ -379,8 +379,8 @@ end
 run Au slab equilibration and output run info to results folder IF Au slab is not already equilibrated
 """
 function runAuSlabEquilibration()
-    i_au=first(getAuDirIdx("results"))
-    if i_au isa Nothing
+    audir=getAuDirPath("results")
+    if audir isa Nothing
         t=@elapsed include("functions/au slab equilibration.jl")
         println("Au slab is equilibrated")
         println("Time to run: $t seconds")
@@ -390,35 +390,21 @@ end
 ############################################################################################################
 
 """
-helper function: get index of au folder in directory
-"""
-function getAuDirIdx(path::String=".")
-    resultsinpath=readdir(path;join=true)
-    i_au=findfirst(contains.(resultsinpath,"Au slab"))
-    return i_au, resultsinpath
-end
-
-############################################################################################################
-
-"""
-helper function: get path of au folder in directory
+helper function: get path of au folder in directory. if not found, return nothing
 """
 function getAuDirPath(path::String=".")
-    i_au,resultsinpath=getAuDirIdx(path)
-    resultsinpath[i_au]
+    resultsinpath=readdir(path;join=true)
+    i_au=findfirst(contains.(resultsinpath,aurundesc))
+    i_au isa Nothing ? i_au : resultsinpath[i_au]
 end
 
 ############################################################################################################
 
 """
-get equilibrated au coords
+run no/au trajectory and output run info to results folder
 """
-function getEquilAuCoords()
-    audir=getAuDirPath("results")
-    coordsfile="$audir/syscoords.xlsx"
-    xfcoord=XLSX.readxlsx(coordsfile)
-    sheets=XLSX.sheetnames(xfcoord)
-    sheetlastcoord=sheets[end]
-    dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
-    [SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]] for i in 1:nrow(dfcoord)]
+function runNOAuTrajectory()
+    t=@elapsed include("functions/noau trajectory.jl")
+    println("NO/Au trajectory is complete")
+    println("Time to run: $t seconds")
 end

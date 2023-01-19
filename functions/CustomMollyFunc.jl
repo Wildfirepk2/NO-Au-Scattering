@@ -114,14 +114,14 @@ end
 
 ############################################################################################################
 
-# custom neighbor finder for molly compatibility
+# custom molly neighbor finder for Au slab
 struct AuNeighborFinder
 end
 
 ############################################################################################################
 
 
-# neighbor finding function for custom neighbor finder. form copied from molly doc. just returns same neighbors each time.
+# neighbor finding function for Au neighbor finder. form copied from molly doc. just returns same neighbors each time.
 function Molly.find_neighbors(s,
                         nf::AuNeighborFinder,
                         current_neighbors=nothing,
@@ -135,4 +135,21 @@ end
 # interaction for NO/Au scattering
 struct NOAuInteraction <: PairwiseInteraction
     nl_only::Bool
+end
+
+############################################################################################################
+
+# custom molly neighbor finder for NO/Au scattering
+struct NONeighborFinder
+end
+
+############################################################################################################
+
+# neighbor finding function for NO/Au neighbor finder. form copied from molly doc. just returns same neighbors each time.
+function Molly.find_neighbors(s,
+                        nf::NONeighborFinder,
+                        current_neighbors=nothing,
+                        step_n::Integer=0;
+                        n_threads::Integer=Threads.nthreads())
+    nn_molly
 end

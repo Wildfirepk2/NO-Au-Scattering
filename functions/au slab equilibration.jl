@@ -7,9 +7,6 @@
 # 3 x N matrix. xyz coords of each Au atom stored in columns
 rAu=initAuCoords()
 
-# Molly object. simulation box dimensions. periodic in x,y directions. needed in other areas outside Molly
-simboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
-
 # nn: array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
 # nn_molly: molly neighbor object. same as nn. for molly compatibility
 nn,nn_molly=getnn()
@@ -31,7 +28,7 @@ Aijarray=initAijarray()
 # Au slab equilibration (MD) using Molly
 
 # defining MD propagation method (velocity verlet)
-simulator = VelocityVerlet(
+simulator_Au = VelocityVerlet(
     # Time step
     dt=param.dt[1],
 
@@ -85,4 +82,4 @@ sys_Au = System(
 step_no=1
 
 # running MD + output results
-runMDprintresults(sys_Au, aurundesc, simulator, steps_eq)
+runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq)

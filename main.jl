@@ -38,6 +38,11 @@ no=initNOParams()
 
 # MD related variables
 
+# Molly object. simulation box dimensions. periodic in x,y directions. needed in other areas outside Molly
+# virtual box dims. needed for certain molly functions
+simboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], Inf*u"Å")
+virtboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
+
 # first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
 const auatomcutoff=397
 
@@ -50,11 +55,17 @@ scalefactor=5000
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
 
+# actual steps for no/au scattering. maybe edit later to always be divisable by 10
+const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
+
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
-### description of run
-aurundesc="Au slab"
+### description of Au run
+const aurundesc="Au slab"
+
+### description of NO/Au run
+const noaurundesc="NO-Au sc"
 
 ############################################################################################################
 

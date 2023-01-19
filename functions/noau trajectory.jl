@@ -5,7 +5,7 @@
 # setup
 
 # defining MD propagation method (velocity verlet)
-simulator = VelocityVerlet(
+simulator_NOAu = VelocityVerlet(
     # Time step
     dt=param.dt[1],
 
@@ -19,28 +19,28 @@ simulator = VelocityVerlet(
 # defining system
 sys_NOAu = System(
     # initializing atoms in system
-    atoms=[Atom(index=i, mass=au.m[1]) for i in 1:au.N[1]],
+    atoms=initNOAuAtoms(),
 
-    # system bound by custom Au slab interactions. using neighbor list=true
-    pairwise_inters=(AuSlabInteraction(true),),
+    # system bound by custom NO/Au interactions. using neighbor list=true
+    pairwise_inters=(NOAuInteraction(true),),
 
     # initial atom coordinates. using static arrays (SA) for Molly compatibility
-    coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
+    coords=initNOAuCoords(),
 
-    # initial atom velocities based on maxwell-Boltzmann distribution at system temp. freezing back layer (velocity at 0K is 0). using velocity function for back layer for consistent units
-    velocities=[i<auatomcutoff ? velocity(au.m[1], param.T[1]) : velocity(1u"u", 0u"K") for i in 1:au.N[1]],
+    # initial atom velocities. NO vel based on √(2E/m). Au slab set to 0
+    velocities=initNOAuVelocities(),
 
     # system boundary. is periodic in x,y
     boundary=simboxdims,
 
     # using custom neighbor finder
-    neighbor_finder=AuNeighborFinder(),
+    neighbor_finder=NONeighborFinder(),
 
-    # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_eq, default steps: set to actsteplog
+    # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
     loggers=(
         # capture velocities and forces at last time step
-        velocities=VelocityLogger(steps_eq),
-        forces=ForceLogger(steps_eq),
+        velocities=VelocityLogger(steps_dyn),
+        forces=ForceLogger(steps_dyn),
 
         # checking energy conservation
         et=TotalEnergyLogger(actsteplog),
@@ -59,4 +59,4 @@ sys_NOAu = System(
 step_no=1
 
 # running MD + output results
-runMDprintresults(sys_NOAu, aurundesc, simulator, steps_eq)
+runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
