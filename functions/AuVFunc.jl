@@ -9,7 +9,7 @@ removes same atom pairs from nearest neighbor list.
 
 called in getnn() only.
 """	
-function removeiipairs!(nn)
+function removeiipairs!(nn::Vector{Vector{Int64}})
 	for i in eachindex(nn)
 		for j in eachindex(nn[i])
 			if nn[i][j]==i
@@ -19,6 +19,22 @@ function removeiipairs!(nn)
 		end
 	end
 end
+
+# ############################################################################################################
+
+# """
+# removes same atom pairs from nearest neighbor list. 
+
+# called in Molly.find_neighbors(NONeighborFinder) only.
+# """	
+# function removeiipairs!(nn::Vector{Int64},atom_no::Int64)
+# 	for i in eachindex(nn)
+# 		if nn[i]==atom_no
+# 			splice!(nn,i)
+# 			break
+# 		end
+# 	end
+# end
 
 ############################################################################################################
 

@@ -34,7 +34,10 @@ sys_NOAu = System(
     boundary=simboxdims,
 
     # using custom neighbor finder
-    neighbor_finder=NONeighborFinder(),
+    neighbor_finder=NONeighborFinder(
+        N_cutoff=PES_GS.AuNcutoff[1],
+        O_cutoff=PES_GS.AuOcutoff[1],
+    ),
 
     # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
     loggers=(

@@ -120,7 +120,6 @@ end
 
 ############################################################################################################
 
-
 # neighbor finding function for Au neighbor finder. form copied from molly doc. just returns same neighbors each time.
 function Molly.find_neighbors(s,
                         nf::AuNeighborFinder,
@@ -140,7 +139,18 @@ end
 ############################################################################################################
 
 # custom molly neighbor finder for NO/Au scattering
-struct NONeighborFinder
+struct NONeighborFinder{D1,D2}
+    N_cutoff::D1
+    O_cutoff::D2
+end
+
+############################################################################################################
+
+# helper function to construct NONeighborFinder w named parameters
+function NONeighborFinder(;
+                        N_cutoff,
+                        O_cutoff)
+    return NONeighborFinder{typeof(N_cutoff),typeof(O_cutoff)}(N_cutoff, O_cutoff)
 end
 
 ############################################################################################################
@@ -151,5 +161,82 @@ function Molly.find_neighbors(s,
                         current_neighbors=nothing,
                         step_n::Integer=0;
                         n_threads::Integer=Threads.nthreads())
-    nn_molly
+    # stripping units for NearestNeighbors compatibility. standardizing units to Angstroms
+    Ncut_nounit=ustrip(u"Å",nf.N_cutoff)
+    Ocut_nounit=ustrip(u"Å",nf.O_cutoff)
+    PBC_nounit=ustrip.(u"Å",s.boundary)
+	PBC=PeriodicEuclidean(PBC_nounit) # simulation box with periodic boundary conditions
+    coords_nounit=ustrip_vec.(u"Å",s.coords)
+
+    # initializing coordinates for nearest neighbor search. BallTree for PBC compatibility. tested to be same as BruteTree (purely distance searching)
+	tree=BallTree(coords_nounit, PBC)
+
+    # search for all points within distances
+	nn_N=inrange(tree,coords_nounit[1],Ncut_nounit)
+    nn_O=inrange(tree,coords_nounit[2],Ocut_nounit)
+    nn=[nn_N,nn_O]
+
+    # remove same atom pairs from nn list
+	removeiipairs!(nn)
+
+    # nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
+	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
+
+    # molly neighbor object
+	nn_molly=NeighborList(length(nntuples), nntuples)
+
+    # above looks ok
+
+############################################################################################################
+dist_unit = unit(first(first(s.coords)))
+    bv = ustrip.(dist_unit, s.boundary)
+    btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
+    dist_cutoff = ustrip(dist_unit, nf.dist_cutoff)
+
+    # @floop ThreadedEx(basesize = length(s) ÷ n_threads) for i in 1:length(s)
+    #     ci = ustrip.(s.coords[i])
+    #     nbi = @view nf.nb_matrix[:, i]
+    #     w14i = @view nf.matrix_14[:, i]
+    #     idxs = inrange(btree, ci, dist_cutoff, true)
+    #     for j in idxs
+    #         if nbi[j] && i > j
+    #             nn = (i, j, w14i[j])
+    #             @reduce(neighbors_list = append!(Tuple{Int, Int, Bool}[], (nn,)))
+    #         end
+    #     end
+    # end
+
+    return NeighborList(length(neighbors_list), neighbors_list)
+
+    ############################################################################################################
+
+
+
+
+
+
+
+
+
+    rAu_nounit=ustrip.(u"Å",rAu)
+	dnn_nounit=ustrip(u"Å",au.dnn[1])
+	PBC_nounit=ustrip.(u"Å",simboxdims)
+	PBC=PeriodicEuclidean(PBC_nounit) # simulation box with periodic boundary conditions
+
+	# initializing coordinates for nearest neighbor search. BallTree for PBC compatibility. tested to be same as BruteTree (purely distance searching)
+	tree=BallTree(rAu_nounit, PBC)
+
+	# search for all points within distance r. +1 for rounding effects
+	r=dnn_nounit+1
+	nn=inrange(tree,rAu_nounit,r)
+
+	# remove same atom pairs from nn list
+	removeiipairs!(nn)
+
+	# nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
+	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
+	nn_molly=NeighborList(length(nntuples), nntuples)
+
+	# output as 528 length array of arrays and molly neighbor object
+	return nn,nn_molly
 end
