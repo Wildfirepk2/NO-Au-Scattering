@@ -87,7 +87,8 @@ NTRAP = 0
 runAuSlabEquilibration()
 
 # make file for holding no/au related functions
-# make function for no/au system init. function composed initNO and initeqAu
-aueqcoords=getEquilAuCoords()
 
 # make simulator/system variables for no/au in global. later on put in separate file like au slab equilibration
+
+headers = ["Eg", "λ1", "λ2"]
+storeEs=DataFrame([name => Float64[] for name in headers])

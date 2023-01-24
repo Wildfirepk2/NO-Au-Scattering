@@ -158,7 +158,7 @@ function getEquilAuCoords()
     sheets=XLSX.sheetnames(xfcoord)
     sheetlastcoord=sheets[end]
     dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
-    [SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]] for i in 1:nrow(dfcoord)]
+    [SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
 end
 
 ############################################################################################################

@@ -187,56 +187,57 @@ function Molly.find_neighbors(s,
 
     # above looks ok
 
-############################################################################################################
-dist_unit = unit(first(first(s.coords)))
-    bv = ustrip.(dist_unit, s.boundary)
-    btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
-    dist_cutoff = ustrip(dist_unit, nf.dist_cutoff)
+    # dist_unit = unit(first(first(s.coords)))
+#     bv = ustrip.(dist_unit, s.boundary)
+#     btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
+#     dist_cutoff = ustrip(dist_unit, nf.dist_cutoff)
 
-    # @floop ThreadedEx(basesize = length(s) ÷ n_threads) for i in 1:length(s)
-    #     ci = ustrip.(s.coords[i])
-    #     nbi = @view nf.nb_matrix[:, i]
-    #     w14i = @view nf.matrix_14[:, i]
-    #     idxs = inrange(btree, ci, dist_cutoff, true)
-    #     for j in idxs
-    #         if nbi[j] && i > j
-    #             nn = (i, j, w14i[j])
-    #             @reduce(neighbors_list = append!(Tuple{Int, Int, Bool}[], (nn,)))
-    #         end
-    #     end
-    # end
+#     @floop ThreadedEx(basesize = length(s) ÷ n_threads) for i in 1:length(s)
+#         ci = ustrip.(s.coords[i])
+#         nbi = @view nf.nb_matrix[:, i]
+#         w14i = @view nf.matrix_14[:, i]
+#         idxs = inrange(btree, ci, dist_cutoff, true)
+#         for j in idxs
+#             if nbi[j] && i > j
+#                 nn = (i, j, w14i[j])
+#                 @reduce(neighbors_list = append!(Tuple{Int, Int, Bool}[], (nn,)))
+#             end
+#         end
+#     end
 
-    return NeighborList(length(neighbors_list), neighbors_list)
-
-    ############################################################################################################
-
-
-
-
-
-
-
-
-
-    rAu_nounit=ustrip.(u"Å",rAu)
-	dnn_nounit=ustrip(u"Å",au.dnn[1])
-	PBC_nounit=ustrip.(u"Å",simboxdims)
-	PBC=PeriodicEuclidean(PBC_nounit) # simulation box with periodic boundary conditions
-
-	# initializing coordinates for nearest neighbor search. BallTree for PBC compatibility. tested to be same as BruteTree (purely distance searching)
-	tree=BallTree(rAu_nounit, PBC)
-
-	# search for all points within distance r. +1 for rounding effects
-	r=dnn_nounit+1
-	nn=inrange(tree,rAu_nounit,r)
-
-	# remove same atom pairs from nn list
-	removeiipairs!(nn)
-
-	# nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
-	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
-	nn_molly=NeighborList(length(nntuples), nntuples)
-
-	# output as 528 length array of arrays and molly neighbor object
-	return nn,nn_molly
+#     return NeighborList(length(neighbors_list), neighbors_list)
 end
+
+############################################################################################################
+
+# potential energy (V) for NO/Au scattering. calculating V for each atom due to NN. molly will sum all Vs. similar to force function. 
+# inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath. 
+# due to truncated NN list, doesnt calc V for back layer. ok since V would be constant (layer doesnt move)
+# see fortran ENERGY_MATRIX
+@inline @inbounds function Molly.potential_energy(inter::NOAuInteraction,
+                            dr,
+                            coord_i,
+                            coord_j,
+                            atom_i,
+                            atom_j,
+                            boundary)
+    
+    Ncoords=sys_NOAu.coords[1]
+    Ocoords=sys_NOAu.coords[2]
+    mN=no.mN[1]
+    mO=no.mO[1]
+    cos_th=cos_th(Ncoords,Ocoords)
+    zcom=zcom(mN,mO,Ncoords,Ocoords)
+    
+    En=V00_AuN(dr)+V00_AuO(dr)+V00_NO(dr)
+    Ei=V11_AuN(dr,cos_th)+V11_AuO(dr)+V11_NO(dr)+V11_image(zcom)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+    Ec=V01_AuN(dr)+V01_AuO(dr)+V01_NO(dr)
+    
+    Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
+    λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
+    λ2=-Ec/√((Ei-Eg)^2+Ec^2)
+
+    push!(storeEs,[Eg,λ1,λ2])
+    return Eg
+end
+

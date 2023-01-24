@@ -20,21 +20,29 @@ function removeiipairs!(nn::Vector{Vector{Int64}})
 	end
 end
 
-# ############################################################################################################
+############################################################################################################
 
-# """
-# removes same atom pairs from nearest neighbor list. 
+"""
+removes atom 1/2 pairs from nearest neighbor list. may scrap later
 
-# called in Molly.find_neighbors(NONeighborFinder) only.
-# """	
-# function removeiipairs!(nn::Vector{Int64},atom_no::Int64)
-# 	for i in eachindex(nn)
-# 		if nn[i]==atom_no
-# 			splice!(nn,i)
-# 			break
-# 		end
-# 	end
-# end
+called in Molly.find_neighbors(NONeighborFinder) only.
+"""	
+function remove12pairs!(nn::Vector{Vector{Int64}})
+	for i in eachindex(nn)
+		for j in eachindex(nn[i])
+			if nn[i][j]==1
+				splice!(nn[i],j)
+				break
+			end
+		end
+		for j in eachindex(nn[i])
+			if nn[i][j]==2
+				splice!(nn[i],j)
+				break
+			end
+		end
+	end
+end
 
 ############################################################################################################
 
