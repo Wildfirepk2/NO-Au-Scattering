@@ -90,5 +90,8 @@ runAuSlabEquilibration()
 
 # make simulator/system variables for no/au in global. later on put in separate file like au slab equilibration
 
-headers = ["Eg", "λ1", "λ2"]
-storeEs=DataFrame([name => Float64[] for name in headers])
+headers = ["no", "Eg", "λ1", "λ2"]
+# fix later for specific types
+storeEs=DataFrame([name => [] for name in headers])
+
+runNOAuTrajectory()

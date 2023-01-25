@@ -89,12 +89,15 @@ function initPESParamIonic()
 	ion.β1*=u"1/Å"
 	ion.AuNcutoff*=u"Å"
 	ion.r1_AuN*=u"Å"
-	ion.D*=u"kJ/mol"
+	ion.D*=u"kJ*Å/mol" # unit compatibility with V func
 	ion.C*=u"Å"
 	ion.zimage*=u"Å"
 	ion.F1*=u"kJ/mol"
 	ion.γ1*=u"1/Å"
 	ion.r1_NO*=u"Å"
+
+	# add height since surface raised
+	ion.zimage[1]+=maximum(initAuParams().z)
 
 	# adding NA for compatibility with kJ/mol
 	ion.ϕ*=u"eV"*N_A

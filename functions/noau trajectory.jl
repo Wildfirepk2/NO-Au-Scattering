@@ -41,14 +41,14 @@ sys_NOAu = System(
 
     # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
     loggers=(
-        # capture velocities and forces at last time step
-        velocities=VelocityLogger(steps_dyn),
-        forces=ForceLogger(steps_dyn),
-
-        # checking energy conservation
+        # checking energy conservation. E needs to be calculated before F
         et=TotalEnergyLogger(actsteplog),
         pe=PotentialEnergyLogger(actsteplog),
         ke=KineticEnergyLogger(actsteplog),
+
+        # capture velocities and forces at last time step
+        velocities=VelocityLogger(steps_dyn),
+        forces=ForceLogger(steps_dyn),
 
         # for animation
         coords=CoordinateLogger(actsteplog),
@@ -61,5 +61,5 @@ sys_NOAu = System(
 # tmp step counter
 step_no=1
 
-# running MD + output results
-runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
+# # running MD + output results
+# runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)

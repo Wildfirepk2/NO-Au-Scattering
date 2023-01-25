@@ -210,7 +210,7 @@ end
 
 ############################################################################################################
 
-# potential energy (V) for NO/Au scattering. calculating V for each atom due to NN. molly will sum all Vs. similar to force function. 
+# [OLD] potential energy (V) for NO/Au scattering. calculating V for each atom due to NN. molly will sum all Vs. similar to force function. 
 # inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath. 
 # due to truncated NN list, doesnt calc V for back layer. ok since V would be constant (layer doesnt move)
 # see fortran ENERGY_MATRIX
@@ -220,24 +220,127 @@ end
                             coord_j,
                             atom_i,
                             atom_j,
-                            boundary)
+                            boundary)    
+    # fetch atom indices
+    i=atom_i.index
+    j=atom_j.index
+    tuple=(i,j)
+    
+    distbtwn=euclidean(dr,zeros(3)u"Å")
+
     
     Ncoords=sys_NOAu.coords[1]
     Ocoords=sys_NOAu.coords[2]
     mN=no.mN[1]
     mO=no.mO[1]
-    cos_th=cos_th(Ncoords,Ocoords)
-    zcom=zcom(mN,mO,Ncoords,Ocoords)
+    cosθ=getcosth(Ncoords,Ocoords)
+    dz=getzcom(mN,mO,Ncoords,Ocoords)
+
+    # N interactions
+    if i==1
+        # NO interaction + 1 time V_image, WF, Ea calc
+        if j==2
+            En=V00_NO(distbtwn)
+            Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+            Ec=0
+            
+            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
+            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
+            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
+
+            push!(storeEs,[tuple,Eg,λ1,λ2])
+            return Eg
+        # N-Au interaction
+        else
+            En=V00_AuN(distbtwn)
+            Ei=V11_AuN(distbtwn,cosθ)
+            Ec=V01_AuN(distbtwn)
+            
+            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
+            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
+            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
+
+            push!(storeEs,[tuple,Eg,λ1,λ2])
+            return Eg
+        end
+    # O interactions
+    else
+        # NO interaction. set to 0 to avoid double counting
+        if j==1
+            0
+        # O-Au interaction
+        else
+            En=V00_AuO(distbtwn)
+            Ei=V11_AuO(distbtwn)
+            Ec=V01_AuO(distbtwn)
+            
+            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
+            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
+            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
+
+            push!(storeEs,[tuple,Eg,λ1,λ2])
+            return Eg
+        end
+    end
+
+    # En=V00_AuN(distbtwn)+V00_AuO(distbtwn)+V00_NO(distbtwn)
+    # Ei=V11_AuN(distbtwn,cosθ)+V11_AuO(distbtwn)+V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+    # Ec=V01_AuN(distbtwn)+V01_AuO(distbtwn)
     
-    En=V00_AuN(dr)+V00_AuO(dr)+V00_NO(dr)
-    Ei=V11_AuN(dr,cos_th)+V11_AuO(dr)+V11_NO(dr)+V11_image(zcom)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
-    Ec=V01_AuN(dr)+V01_AuO(dr)+V01_NO(dr)
-    
+    # Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
+    # λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
+    # λ2=-Ec/√((Ei-Eg)^2+Ec^2)
+
+    # push!(storeEs,[tuple,Eg,λ1,λ2])
+    # return Eg
+end
+
+############################################################################################################
+
+# alter molly PE function above for NO/Au. need to calculate E all at once
+function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}}, neighbors=nothing)
+    En=0 * s.energy_units
+    Ei=0 * s.energy_units
+    Ec=0 * s.energy_units
+
+    @inbounds for ni in 1:neighbors.n
+        i, j, weight_14 = neighbors.list[ni]
+        dr = vector(s.coords[i], s.coords[j], s.boundary)
+        distbtwn=euclidean(dr,zeros(3)u"Å")
+
+        Ncoords=s.coords[1]
+        Ocoords=s.coords[2]
+        mN=s.atoms[1].mass
+        mO=s.atoms[2].mass
+        cosθ=getcosth(Ncoords,Ocoords)
+        dz=getzcom(mN,mO,Ncoords,Ocoords)
+
+        if i==1
+            # NO interaction + 1 time V_image, WF, Ea calc
+            if j==2
+                En+=V00_NO(distbtwn)
+                Ei+=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+            # N-Au interaction
+            else
+                En+=V00_AuN(distbtwn)
+                Ei+=V11_AuN(distbtwn,cosθ)
+                Ec+=V01_AuN(distbtwn)
+            end
+        # O-Au interactions
+        else
+            if j>1
+                En+=V00_AuO(distbtwn)
+                Ei+=V11_AuO(distbtwn)
+                Ec+=V01_AuO(distbtwn)
+            end
+        end
+    end
+
     Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
     λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
     λ2=-Ec/√((Ei-Eg)^2+Ec^2)
 
-    push!(storeEs,[Eg,λ1,λ2])
-    return Eg
+    push!(storeEs,[step_no,Eg,λ1,λ2])
+    
+    return uconvert(s.energy_units, Eg)
 end
-

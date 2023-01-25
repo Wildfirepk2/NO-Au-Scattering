@@ -9,7 +9,7 @@ Au/O interaction potential for ground state. see roy art, p6, eq 9
 
 dr=|ri-rO|
 """
-function V00_AuO(dr::Float64)
+function V00_AuO(dr::Unitful.Length)
 	A0=PES_GS.A0[1]
 	α0=PES_GS.α0[1]
 	r_cutoff=PES_GS.AuOcutoff[1]
@@ -28,7 +28,7 @@ Au/N interaction potential for ground state. see roy art, p6, eq 10
 
 dr=|ri-rN|
 """
-function V00_AuN(dr::Float64)
+function V00_AuN(dr::Unitful.Length)
 	B0=PES_GS.B0[1]
 	β0=PES_GS.β0[1]
 	r_cutoff=PES_GS.AuNcutoff[1]
@@ -47,7 +47,7 @@ N/O interaction potential for ground state. see roy art, p6, eq 11
 
 dr=|rN-rO|
 """
-function V00_NO(dr::Float64)
+function V00_NO(dr::Unitful.Length)
 	F0=PES_GS.F0[1]
 	γ0=PES_GS.γ0[1]
 	r0_NO=PES_GS.r0_NO[1]
@@ -66,7 +66,7 @@ Au/O interaction potential for excited state. see roy art, p6, eq 14
 
 dr=|ri-rO|
 """
-function V11_AuO(dr::Float64)
+function V11_AuO(dr::Unitful.Length)
 	A1=PES_ionic.A1[1]
 	α1=PES_ionic.α1[1]
 	r_cutoff=PES_ionic.AuOcutoff[1]
@@ -87,7 +87,7 @@ dr=|ri-rN|
 
 cos_th=(zO-zN)/|rN-rO|
 """
-function V11_AuN(dr::Float64,cos_th::Float64)
+function V11_AuN(dr::Unitful.Length,cos_th::Float64)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
 	r1_AuN=PES_ionic.r1_AuN[1]
@@ -114,7 +114,7 @@ N/O interaction potential for excited state. see roy art, p6, eq 16
 
 dr=|rN-rO|
 """
-function V11_NO(dr::Float64)
+function V11_NO(dr::Unitful.Length)
 	F1=PES_ionic.F1[1]
 	γ1=PES_ionic.γ1[1]
 	r1_NO=PES_ionic.r1_NO[1]
@@ -133,7 +133,7 @@ Au/NO interaction potential for excited state at far distances. see roy art, p6,
 
 zcom is the perpendicular distance of the center of mass of the NO molecule from the surface plane (z=0)
 """
-function V11_image(zcom)
+function V11_image(zcom::Unitful.Length)
 	D=PES_ionic.D[1]
 	C=PES_ionic.C[1]
 	zimage=PES_ionic.zimage[1]
@@ -153,7 +153,7 @@ Au/O interaction potential for coupled state. see roy art, p7, eq 18. variables 
 
 dr=|ri-rO|
 """
-function V01_AuO(dr::Float64)
+function V01_AuO(dr::Unitful.Length)
 	A2=PES_coup.A2[1]
 	A3=PES_coup.A3[1]
 	γ2=PES_coup.γ2[1]
@@ -176,7 +176,7 @@ Au/N interaction potential for coupled state. see roy art, p7, eq 19. variables 
 
 dr=|ri-rN|
 """
-function V01_AuN(dr::Float64)
+function V01_AuN(dr::Unitful.Length)
 	B2=PES_coup.B2[1]
 	B3=PES_coup.B3[1]
 	γ3=PES_coup.γ3[1]
@@ -199,7 +199,7 @@ Au/O force function for ground state. see roy art, p6, eq 9
 
 dr=|ri-rO|
 """
-function F00_AuO(dr::Float64)
+function F00_AuO(dr::Unitful.Length)
 	A0=PES_GS.A0[1]
 	α0=PES_GS.α0[1]
 	r_cutoff=PES_GS.AuOcutoff[1]
@@ -218,7 +218,7 @@ Au/N force function for ground state. see roy art, p6, eq 10
 
 dr=|ri-rN|
 """
-function F00_AuN(dr::Float64)
+function F00_AuN(dr::Unitful.Length)
 	B0=PES_GS.B0[1]
 	β0=PES_GS.β0[1]
 	r_cutoff=PES_GS.AuNcutoff[1]
@@ -237,7 +237,7 @@ N/O force function for ground state. see roy art, p6, eq 11
 
 dr=|rN-rO|
 """
-function F00_NO(dr::Float64)
+function F00_NO(dr::Unitful.Length)
 	F0=PES_GS.F0[1]
 	γ0=PES_GS.γ0[1]
 	r0_NO=PES_GS.r0_NO[1]
@@ -256,7 +256,7 @@ Au/O force function for excited state. see roy art, p6, eq 14
 
 dr=|ri-rO|
 """
-function F11_AuO(dr::Float64)
+function F11_AuO(dr::Unitful.Length)
 	A1=PES_ionic.A1[1]
 	α1=PES_ionic.α1[1]
 	r_cutoff=PES_ionic.AuOcutoff[1]
@@ -277,7 +277,7 @@ dr=|ri-rN|
 
 cos_th=(zO-zN)/|rN-rO|
 """
-function F11_AuN(dr::Float64,cos_th::Float64)
+function F11_AuN(dr::Unitful.Length,cos_th::Float64)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
 	r1_AuN=PES_ionic.r1_AuN[1]
@@ -304,7 +304,7 @@ N/O force function for excited state. see roy art, p6, eq 16
 
 dr=|rN-rO|
 """
-function F11_NO(dr::Float64)
+function F11_NO(dr::Unitful.Length)
 	F1=PES_ionic.F1[1]
 	γ1=PES_ionic.γ1[1]
 	r1_NO=PES_ionic.r1_NO[1]
@@ -323,7 +323,7 @@ Au/NO force function for excited state at far distances. see roy art, p6, eq 13
 
 zcom is the perpendicular distance of the center of mass of the NO molecule from the surface plane (z=0)
 """
-function F11_image(zcom)
+function F11_image(zcom::Unitful.Length)
 	D=PES_ionic.D[1]
 	C=PES_ionic.C[1]
 	zimage=PES_ionic.zimage[1]
@@ -343,7 +343,7 @@ Au/O force function for coupled state. see roy art, p7, eq 18. variables defined
 
 dr=|ri-rO|
 """
-function F01_AuO(dr::Float64)
+function F01_AuO(dr::Unitful.Length)
 	A2=PES_coup.A2[1]
 	A3=PES_coup.A3[1]
 	γ2=PES_coup.γ2[1]
@@ -366,7 +366,7 @@ Au/N force function for coupled state. see roy art, p7, eq 19. variables defined
 
 dr=|ri-rN|
 """
-function F01_AuN(dr::Float64)
+function F01_AuN(dr::Unitful.Length)
 	B2=PES_coup.B2[1]
 	B3=PES_coup.B3[1]
 	γ3=PES_coup.γ3[1]
@@ -387,7 +387,7 @@ end
 """
 helper function: get cos(θ) between two vectors
 """
-function cos_th(v1::Vector{Float64},v2::Vector{Float64})
+function getcosth(v1::SVector,v2::SVector)
 	dz=v2[3]-v1[3]
     r=euclidean(v1,v2)
     dz/r
@@ -398,7 +398,7 @@ end
 """
 helper function: center of mass
 """
-function center_of_mass(m1::Float64, m2::Float64, r1::Vector{Float64}, r2::Vector{Float64})
+function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)
     (m1*r1 + m2*r2) / (m1 + m2)
 end
 
@@ -407,10 +407,10 @@ end
 """
 helper function: get the perpendicular distance of the center of mass of the NO molecule from the surface plane (z=0)
 """
-function zcom(m1::Float64, m2::Float64, r1::Vector{Float64}, r2::Vector{Float64})
-	com=center_of_mass(m1, m2, r1, r2)
+function getzcom(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)
+	com=getCOM(m1, m2, r1, r2)
 	zcom=com[3]
 	h_surf=maximum(au.z)
-	com-h_surf
+	zcom-h_surf
 end
 

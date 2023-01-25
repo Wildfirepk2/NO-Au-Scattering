@@ -1,9 +1,9 @@
-Time of run: 2023-01-19 17:20:23
+Time of run: 2023-01-24 17:22:42
 Number of atoms: 528
 Number of steps: 1
 Time step: 0.1 fs (0.01 t_MD)
 Total time: 0.1 fs (0.01 t_MD)
-Simulation runtime: 6.899515269 s
+Simulation runtime: 8.844417019 s
 
 Steps between logging quantities
     Coords: 1
@@ -17,4 +17,4 @@ Time period between logging quantities
     Forces: 0.1 fs (0.01 t_MD)
     Velocities: 0.1 fs (0.01 t_MD)
 
-Final Slab Total Energy: 1510.5154681929089 kJ mol⁻¹ (15.11 e_MD)
+Final Slab Total Energy: 1485.6664275408145 kJ mol⁻¹ (14.86 e_MD)
