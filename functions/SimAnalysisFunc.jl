@@ -13,8 +13,8 @@ function write_xlsx(file, dt, i, stepslog, df::DataFrame)
     step=(i-1)*stepslog
 
     # time at step no
-    time=dt*step
-
+    time=round(unit(dt),dt*step;digits=2)
+    
     # data to go in excel file
     data = collect(eachcol(df))
     cols = names(df)

@@ -47,8 +47,8 @@ sys_NOAu = System(
         ke=KineticEnergyLogger(actsteplog),
 
         # capture velocities and forces at last time step
-        velocities=VelocityLogger(steps_dyn),
-        forces=ForceLogger(steps_dyn),
+        velocities=VelocityLogger(actsteplog),
+        forces=ForceLogger(actsteplog),
 
         # for animation
         coords=CoordinateLogger(actsteplog),
@@ -61,5 +61,5 @@ sys_NOAu = System(
 # tmp step counter
 step_no=1
 
-# # running MD + output results
-# runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
+# running MD + output results
+runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)

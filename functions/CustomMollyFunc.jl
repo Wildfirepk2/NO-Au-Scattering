@@ -344,3 +344,73 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     
     return uconvert(s.energy_units, Eg)
 end
+
+############################################################################################################
+
+# force function for Au slab equilibration. calculating F for each atom due to NN. 
+# inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
+# see roy art, p7, eq 20. see fortran GetFNN2
+@inline @inbounds function Molly.force(inter::NOAuInteraction,
+                            vec_ij,
+                            coord_i,
+                            coord_j,
+                            atom_i,
+                            atom_j,
+                            boundary)
+    # fetch atom indices
+    i=atom_i.index
+    j=atom_j.index
+    sysunits=sys_NOAu.force_units
+
+    λ1=storeEs[end,3]
+    λ2=storeEs[end,4]
+    a=λ1^2
+    b=λ2^2
+    c=2*λ1*λ2
+
+    distbtwn=euclidean(vec_ij,zeros(3)u"Å")
+    u=normalize(vec_ij)
+
+    Ncoords=sys_NOAu.coords[1]
+    Ocoords=sys_NOAu.coords[2]
+    mN=sys_NOAu.atoms[1].mass
+    mO=sys_NOAu.atoms[2].mass
+    cosθ=getcosth(Ncoords,Ocoords)
+    dz=getzcom(mN,mO,Ncoords,Ocoords)
+
+    if i==1
+        # NO interaction
+        if j==2
+            Fn=F00_NO(distbtwn)
+            Fi=F11_NO(distbtwn)
+            Fc=F11_image(dz)
+            
+            F=Fn*a+Fi*b+Fc*c
+
+            F*u .|> sysunits
+        # N-Au interaction
+        else
+            Fn=F00_AuN(distbtwn)
+            Fi=F11_AuN(distbtwn,cosθ)
+            Fc=F01_AuN(distbtwn)
+            
+            F=Fn*a+Fi*b+Fc*c
+
+            F*u .|> sysunits
+        end
+    else
+        # NO interaction. set to 0 to avoid double counting
+        if j==1
+            SVector{3}(zeros(3)sysunits)
+        # O-Au interactions
+        else   
+            Fn=F00_AuO(distbtwn)
+            Fi=F11_AuO(distbtwn)
+            Fc=F01_AuO(distbtwn)
+                        
+            F=Fn*a+Fi*b+Fc*c
+
+            F*u .|> sysunits
+        end
+    end
+end

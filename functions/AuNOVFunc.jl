@@ -202,13 +202,11 @@ dr=|ri-rO|
 function F00_AuO(dr::Unitful.Length)
 	A0=PES_GS.A0[1]
 	α0=PES_GS.α0[1]
-	r_cutoff=PES_GS.AuOcutoff[1]
 
 	eterm1=exp(-α0*dr)
-	eterm2=exp(-α0*r_cutoff)
 
 	# output F
-	A0*(eterm1-eterm2) 
+	A0*α0*eterm1
 end
 
 ############################################################################################################
@@ -221,13 +219,11 @@ dr=|ri-rN|
 function F00_AuN(dr::Unitful.Length)
 	B0=PES_GS.B0[1]
 	β0=PES_GS.β0[1]
-	r_cutoff=PES_GS.AuNcutoff[1]
 
 	eterm1=exp(-β0*dr)
-	eterm2=exp(-β0*r_cutoff)
 
 	# output F
-	B0*(eterm1-eterm2) 
+	B0*β0*eterm1
 end
 
 ############################################################################################################
@@ -246,7 +242,7 @@ function F00_NO(dr::Unitful.Length)
 	eterm=exp(-γ0*ddr)
 
 	# output F
-	F0*(1-eterm)^2 
+	-2F0*γ0*eterm*(1-eterm) 
 end
 
 ############################################################################################################
@@ -259,13 +255,11 @@ dr=|ri-rO|
 function F11_AuO(dr::Unitful.Length)
 	A1=PES_ionic.A1[1]
 	α1=PES_ionic.α1[1]
-	r_cutoff=PES_ionic.AuOcutoff[1]
 
 	eterm1=exp(-α1*dr)
-	eterm2=exp(-α1*r_cutoff)
 
 	# output F
-	A1*(eterm1-eterm2) 
+	A1*α1*eterm1
 end
 
 ############################################################################################################
@@ -280,21 +274,16 @@ cos_th=(zO-zN)/|rN-rO|
 function F11_AuN(dr::Unitful.Length,cos_th::Float64)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
-	r1_AuN=PES_ionic.r1_AuN[1]
-	r_cutoff=PES_ionic.AuNcutoff[1]
 
 	ddr1=dr-r1_AuN
-	ddr2=r_cutoff-r1_AuN
 
 	eterm1=exp(-β1*ddr1)
-	eterm2=exp(-β1*ddr2)
 
-	a=eterm1^2-eterm2^2
-	b=2*cos_th^2*eterm1
-	c=eterm2
+	a=eterm1^2
+	b=cos_th^2*eterm1
 
 	# output F
-	B1*(a-b-c) 
+	2B1*β1*(a-b) 
 end
 
 ############################################################################################################
@@ -313,7 +302,7 @@ function F11_NO(dr::Unitful.Length)
 	eterm=exp(-γ1*ddr)
 
 	# output F
-	F1*(1-eterm)^2 
+	-2F1*γ1*eterm*(1-eterm) 
 end
 
 ############################################################################################################
@@ -330,10 +319,10 @@ function F11_image(zcom::Unitful.Length)
 
 	dz=zcom-zimage
 	expr=C^2+dz^2
-	sqexpr=sqrt(expr)
+	sqexpr=expr^(3/2)
 
 	# output F
-	-D/sqexpr 
+	-D*dz/sqexpr 
 end
 
 ############################################################################################################
@@ -347,16 +336,13 @@ function F01_AuO(dr::Unitful.Length)
 	A2=PES_coup.A2[1]
 	A3=PES_coup.A3[1]
 	γ2=PES_coup.γ2[1]
-	r_cutoff=PES_coup.AuOcutoff[1]
 
 	eterm1=exp(γ2*dr)
-	eterm2=exp(γ2*r_cutoff)
 
 	expr1=1+A3*eterm1
-	expr2=1+A3*eterm2
 
 	# output F
-	-A2*(expr1^-1-expr2^-1) 
+	-A2*A3*γ2*expr1*(expr1^-2) 
 end
 
 ############################################################################################################
@@ -370,16 +356,13 @@ function F01_AuN(dr::Unitful.Length)
 	B2=PES_coup.B2[1]
 	B3=PES_coup.B3[1]
 	γ3=PES_coup.γ3[1]
-	r_cutoff=PES_coup.AuNcutoff[1]
 
 	eterm1=exp(γ3*dr)
-	eterm2=exp(γ3*r_cutoff)
 
 	expr1=1+B3*eterm1
-	expr2=1+B3*eterm2
 
 	# output F
-	-B2*(expr1^-1-expr2^-1)
+	-B2*B3*γ3*expr1*(expr1^-2)
 end
 
 ############################################################################################################
