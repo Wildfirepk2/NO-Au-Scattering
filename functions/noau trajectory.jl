@@ -47,8 +47,8 @@ sys_NOAu = System(
         ke=KineticEnergyLogger(actsteplog),
 
         # capture velocities and forces at last time step
-        velocities=VelocityLogger(actsteplog),
-        forces=ForceLogger(actsteplog),
+        velocities=VelocityLogger(steps_dyn),
+        forces=ForceLogger(steps_dyn),
 
         # for animation
         coords=CoordinateLogger(actsteplog),

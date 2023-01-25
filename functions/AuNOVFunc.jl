@@ -274,7 +274,8 @@ cos_th=(zO-zN)/|rN-rO|
 function F11_AuN(dr::Unitful.Length,cos_th::Float64)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
-
+	r1_AuN=PES_ionic.r1_AuN[1]
+	
 	ddr1=dr-r1_AuN
 
 	eterm1=exp(-β1*ddr1)
