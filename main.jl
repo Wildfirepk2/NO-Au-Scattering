@@ -5,9 +5,8 @@
 # initialize all functions
 include("functions/Dependencies.jl")
 include("functions/MDUnits.jl")
-include("functions/SimParams.jl")
-include("functions/AuNOVFunc.jl")
-include("functions/AuVFunc.jl")
+include("functions/InitSimParams.jl")
+include("functions/NOAuFVFunc.jl")
 include("functions/InitAuSys.jl")
 include("functions/InitNOAuSys.jl")
 include("functions/CustomMollyFunc.jl")
@@ -56,7 +55,7 @@ const stepslogging=10
 scalefactor::Int64=1e5
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
-const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
+const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
 
 # actual steps for no/au scattering. maybe edit later to always be divisable by 10
 const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor

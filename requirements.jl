@@ -18,7 +18,6 @@ dependencies = [# for Au slab
 
                 # MD
                 "Molly",
-		"GLFW",
 		"GLMakie",
                 ]
 
