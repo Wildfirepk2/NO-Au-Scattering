@@ -225,83 +225,46 @@ end
 
 ############################################################################################################
 
-"""
-potential due to ij pair on neutral PES (neutral_only=true). for NO/Au sys
-"""
-function Vij_neutral(i,j,distbtwn)
-    if i==1
-        # NO interaction + 1 time V_image, WF, Ea calc
-        if j==2
-            En=V00_NO(distbtwn)
-            Ei=0u"e_MD"
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        # N-Au interaction
-        else
-            En=V00_AuN(distbtwn)
-            Ei=0u"e_MD"
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        end
-    else
-        # NO interaction. set to 0 to avoid double counting
-        if j==1
-            En=0u"e_MD"
-            Ei=0u"e_MD"
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        # O-Au interactions
-        else
-            En=V00_AuO(distbtwn)
-            Ei=0u"e_MD"
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        end
-    end
-end
-
-############################################################################################################
-
-"""
-potential due to ij pair on diabatic PES (neutral_only=false). for NO/Au sys
-"""
-function Vij_diabatic(i,j,distbtwn,cosθ,dz)
-    if i==1
-        # NO interaction + 1 time V_image, WF, Ea calc
-        if j==2
-            En=V00_NO(distbtwn)
-            Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        # N-Au interaction
-        else
-            En=V00_AuN(distbtwn)
-            Ei=V11_AuN(distbtwn,cosθ)
-            Ec=V01_AuN(distbtwn)
-            return En,Ei,Ec
-        end
-    # O-Au interactions
-    else
-        # NO interaction. set to 0 to avoid double counting
-        if j==1
-            En=0u"e_MD"
-            Ei=0u"e_MD"
-            Ec=0u"e_MD"
-            return En,Ei,Ec
-        # O-Au interactions
-        else
-            En=V00_AuO(distbtwn)
-            Ei=V11_AuO(distbtwn)
-            Ec=V01_AuO(distbtwn)
-            return En,Ei,Ec
-        end
-    end
-end
-
-############################################################################################################
-
 function getVij_NOAu(i,j,distbtwn,cosθ,dz)
-    neutral_only ? Vij_neutral(i,j,distbtwn) : Vij_diabatic(i,j,distbtwn,cosθ,dz)
+    En=0u"e_MD"
+    Ei=0u"e_MD"
+    Ec=0u"e_MD"
+    if i==1
+        # NO interaction + 1 time V_image, WF, Ea calc
+        if j==2
+            if neutral_PES_active
+                En=V00_NO(distbtwn)
+            end
+            if ionic_PES_active
+                Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+            end
+        # N-Au interaction
+        else
+            if neutral_PES_active
+                En=V00_AuN(distbtwn)
+            end
+            if ionic_PES_active
+                Ei=V11_AuN(distbtwn,cosθ)
+            end
+            if coupled_PES_active
+                Ec=V01_AuN(distbtwn)
+            end
+        end
+    else
+        # O-Au interactions
+        if j>1
+            if neutral_PES_active
+                En=V00_AuO(distbtwn)
+            end
+            if ionic_PES_active
+                Ei=V11_AuO(distbtwn)
+            end
+            if coupled_PES_active
+                Ec=V01_AuO(distbtwn)
+            end
+        end
+    end
+    return En,Ei,Ec
 end
 
 ############################################################################################################
@@ -345,71 +308,48 @@ end
 
 ############################################################################################################
 
-"""
-force due to ij pair on neutral PES (neutral_only=true). for NO/Au sys
-"""
-function Fij_neutral(i,j,distbtwn,a)
-    if i==1
-        # NO interaction
-        if j==2
-            Fn=F00_NO(distbtwn)
-            Fn*a
-        # N-Au interaction
-        else
-            Fn=F00_AuN(distbtwn)
-            Fn*a
-        end
-    else
-        # NO interaction. set to 0 to avoid double counting
-        if j==1
-            0u"N/mol"
-        # O-Au interactions
-        else   
-            Fn=F00_AuO(distbtwn)
-            Fn*a
-        end
-    end
-end
-
-############################################################################################################
-
-"""
-force due to ij pair on diabatic PES (neutral_only=false). for NO/Au sys
-"""
-function Fij_diabatic(i,j,distbtwn,cosθ,dz,a,b,c)
-    if i==1
-        # NO interaction
-        if j==2
-            Fn=F00_NO(distbtwn)
-            Fi=F11_NO(distbtwn)
-            Fc=F11_image(dz)
-            
-            Fn*a+Fi*b+Fc*c
-        # N-Au interaction
-        else
-            Fn=F00_AuN(distbtwn)
-            Fi=F11_AuN(distbtwn,cosθ)
-            Fc=F01_AuN(distbtwn)
-            
-            Fn*a+Fi*b+Fc*c
-        end
-    else
-        # NO interaction. set to 0 to avoid double counting
-        if j==1
-            0u"N/mol"
-        # O-Au interactions
-        else   
-            Fn=F00_AuO(distbtwn)
-            Fi=F11_AuO(distbtwn)
-            Fc=F01_AuO(distbtwn)
-                        
-            Fn*a+Fi*b+Fc*c
-        end
-    end
-end
-
-############################################################################################################
-
 function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
-    neutral_only ? Fij_neutral(i,j,distbtwn,a) : Fij_diabatic(i,j,distbtwn,cosθ,dz,a,b,c)
+    Fn=0u"N/mol"
+    Fi=0u"N/mol"
+    Fc=0u"N/mol"
+
+    if i==1
+        # NO interaction
+        if j==2
+            if neutral_PES_active
+                Fn=F00_NO(distbtwn)
+            end
+            if ionic_PES_active
+                Fi=F11_NO(distbtwn)
+            end
+            if coupled_PES_active
+                Fc=F11_image(dz)
+            end
+        # N-Au interaction
+        else
+            if neutral_PES_active
+                Fn=F00_AuN(distbtwn)
+            end
+            if ionic_PES_active
+                Fi=F11_AuN(distbtwn,cosθ)
+            end
+            if coupled_PES_active
+                Fc=F01_AuN(distbtwn)
+            end
+        end
+    else
+        # O-Au interactions 
+        if j>1
+            if neutral_PES_active
+                Fn=F00_AuO(distbtwn)
+            end
+            if ionic_PES_active
+                Fi=F11_AuO(distbtwn)
+            end
+            if coupled_PES_active
+                Fc=F01_AuO(distbtwn)
+            end
+        end
+    end
+    Fn*a+Fi*b+Fc*c
 end

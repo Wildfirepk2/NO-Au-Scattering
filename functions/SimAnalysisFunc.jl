@@ -242,7 +242,10 @@ end
 """
 print txt file with summary of run.
 """
-function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+    # description of run
+    title = desc==aurundesc ? "Au(111) Slab Equilibration" : "NO/Au(111) Scattering"
+    
     # time of run
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
 
@@ -279,6 +282,8 @@ function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
     # write to txt
     file="$runpath/summary.txt"
     open(file,"w") do io
+        println(io,title)
+        println(io)
         println(io,"Time of run: $daterun")
         println(io,"Number of atoms: $natoms")
         println(io,"Number of steps: $simsteps")
@@ -286,6 +291,13 @@ function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Total time: $ttotal ($ttotalmd)")
         println(io,"Simulation runtime: $runtime")
         println(io)
+        if desc==noaurundesc
+            println(io,"PESs:")
+            println(io,"    neutral_PES_active = $neutral_PES_active")
+            println(io,"    ionic_PES_active = $ionic_PES_active")
+            println(io,"    coupled_PES_active = $coupled_PES_active")
+            println(io)
+        end
         println(io,"Steps between logging quantities")
         println(io,"    Coords: $stepsbtwnlogsCoords")
         println(io,"    Energies: $stepsbtwnlogsE")
@@ -370,5 +382,5 @@ function runMDprintresults(sys,desc,simulator,steps)
     outputsysinfo(sys,dt,desc,path)
 
     # output summary of run
-    outputsummary(sys,dt,steps,runtime,path)
+    outputsummary(sys,dt,desc,steps,runtime,path)
 end
