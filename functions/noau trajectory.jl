@@ -2,8 +2,6 @@
 
 ############################################################################################################
 
-# setup
-
 # defining MD propagation method (velocity verlet)
 simulator_NOAu = VelocityVerlet(
     # Time step
@@ -11,9 +9,6 @@ simulator_NOAu = VelocityVerlet(
 
     # dont remove center of mass motion to keep layer fixed. may revert.
     remove_CM_motion=false,
-
-    # # random scaling of atom velocities for thermal equilibration? setting time constant to 500*dt (same as Molly example). may change later
-    # coupling=AndersenThermostat(param.T[1], 500*param.dt[1]),
 )
 
 # defining system
@@ -54,12 +49,6 @@ sys_NOAu = System(
         coords=CoordinateLogger(actsteplog),
     ),
 )
-
-# # may use instead of r0ij, rAu in future
-# initcoords=copy(sys_Au.coords)
-
-# tmp step counter
-step_no=1
 
 # running MD + output results
 runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)

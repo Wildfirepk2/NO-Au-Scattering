@@ -233,7 +233,7 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     λ2=-Ec/√((Ei-Eg)^2+Ec^2)
 
     # store eigenvalues for force calculation
-    push!(storeEs,[step_no,Eg,λ1,λ2])
+    push!(storeEs,[Eg,λ1,λ2])
     
     return uconvert(s.energy_units, Eg)
 end

@@ -77,7 +77,7 @@ const noaurundesc="NO-Au sc"
 runAuSlabEquilibration()
 
 # store eigenvalues for f func
-headers = ["no", "Eg", "λ1", "λ2"]
+headers = ["Eg", "λ1", "λ2"]
 # fix later for specific types
 storeEs=DataFrame([name => [] for name in headers])
 
