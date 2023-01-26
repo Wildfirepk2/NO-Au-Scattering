@@ -1,0 +1,20 @@
+Time of run: 2023-01-26 00:17:18
+Number of atoms: 530
+Number of steps: 25000
+Time step: 0.1 fs (0.01 t_MD)
+Total time: 2500.0 fs (250.0 t_MD)
+Simulation runtime: 6.602209774 s
+
+Steps between logging quantities
+    Coords: 10
+    Energies: 10
+    Forces: 25000
+    Velocities: 25000
+
+Time period between logging quantities
+    Coords: 1.0 fs (0.1 t_MD)
+    Energies: 1.0 fs (0.1 t_MD)
+    Forces: 2500.0 fs (250.0 t_MD)
+    Velocities: 2500.0 fs (250.0 t_MD)
+
+Final System Total Energy: NaN kJ mol⁻¹ (NaN e_MD)

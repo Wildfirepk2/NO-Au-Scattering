@@ -67,10 +67,10 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-DIA"
+const noaurundesc="NO-Au sc-NEU"
 
 # whether to use neutral or diabatic PES in NO/Au scattering
-const neutral_only=false
+const neutral_only=true
 
 ############################################################################################################
 
