@@ -8,6 +8,8 @@ include("functions/MDUnits.jl")
 include("functions/SimParams.jl")
 include("functions/AuNOVFunc.jl")
 include("functions/AuVFunc.jl")
+include("functions/InitAuSys.jl")
+include("functions/InitNOAuSys.jl")
 include("functions/CustomMollyFunc.jl")
 include("functions/SimAnalysisFunc.jl")
 

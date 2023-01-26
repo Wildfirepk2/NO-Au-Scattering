@@ -372,39 +372,3 @@ function runMDprintresults(sys,desc,simulator,steps)
     # output summary of run
     outputsummary(sys,dt,steps,runtime,path)
 end
-
-############################################################################################################
-
-"""
-run Au slab equilibration and output run info to results folder IF Au slab is not already equilibrated
-"""
-function runAuSlabEquilibration()
-    audir=getAuDirPath("results")
-    if audir isa Nothing
-        t=@elapsed include("functions/au slab equilibration.jl")
-        println("Au slab is equilibrated")
-        println("Time to run: $t seconds")
-    end
-end
-
-############################################################################################################
-
-"""
-helper function: get path of au folder in directory. if not found, return nothing
-"""
-function getAuDirPath(path::String=".")
-    resultsinpath=readdir(path;join=true)
-    i_au=findfirst(contains.(resultsinpath,aurundesc))
-    i_au isa Nothing ? i_au : resultsinpath[i_au]
-end
-
-############################################################################################################
-
-"""
-run no/au trajectory and output run info to results folder
-"""
-function runNOAuTrajectory()
-    t=@elapsed include("functions/noau trajectory.jl")
-    println("NO/Au trajectory is complete")
-    println("Time to run: $t seconds")
-end
