@@ -206,25 +206,10 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
         cosθ=getcosth(Ncoords,Ocoords)
         dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-        if i==1
-            # NO interaction + 1 time V_image, WF, Ea calc
-            if j==2
-                En+=V00_NO(distbtwn)
-                Ei+=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
-            # N-Au interaction
-            else
-                En+=V00_AuN(distbtwn)
-                Ei+=V11_AuN(distbtwn,cosθ)
-                Ec+=V01_AuN(distbtwn)
-            end
-        # O-Au interactions
-        else
-            if j>1
-                En+=V00_AuO(distbtwn)
-                Ei+=V11_AuO(distbtwn)
-                Ec+=V01_AuO(distbtwn)
-            end
-        end
+        t_En,t_Ei,t_Ec=getVij_NOAu(i,j,distbtwn,cosθ,dz)
+        En+=t_En
+        Ei+=t_Ei
+        Ec+=t_Ec
     end
 
     # final ground state energy/eigenvalues
@@ -236,6 +221,87 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     push!(storeEs,[Eg,λ1,λ2])
     
     return uconvert(s.energy_units, Eg)
+end
+
+############################################################################################################
+
+"""
+potential due to ij pair on neutral PES (neutral_only=true). for NO/Au sys
+"""
+function Vij_neutral(i,j,distbtwn)
+    if i==1
+        # NO interaction + 1 time V_image, WF, Ea calc
+        if j==2
+            En=V00_NO(distbtwn)
+            Ei=0u"e_MD"
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        # N-Au interaction
+        else
+            En=V00_AuN(distbtwn)
+            Ei=0u"e_MD"
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        end
+    else
+        # NO interaction. set to 0 to avoid double counting
+        if j==1
+            En=0u"e_MD"
+            Ei=0u"e_MD"
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        # O-Au interactions
+        else
+            En=V00_AuO(distbtwn)
+            Ei=0u"e_MD"
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        end
+    end
+end
+
+############################################################################################################
+
+"""
+potential due to ij pair on diabatic PES (neutral_only=false). for NO/Au sys
+"""
+function Vij_diabatic(i,j,distbtwn,cosθ,dz)
+    if i==1
+        # NO interaction + 1 time V_image, WF, Ea calc
+        if j==2
+            En=V00_NO(distbtwn)
+            Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        # N-Au interaction
+        else
+            En=V00_AuN(distbtwn)
+            Ei=V11_AuN(distbtwn,cosθ)
+            Ec=V01_AuN(distbtwn)
+            return En,Ei,Ec
+        end
+    # O-Au interactions
+    else
+        # NO interaction. set to 0 to avoid double counting
+        if j==1
+            En=0u"e_MD"
+            Ei=0u"e_MD"
+            Ec=0u"e_MD"
+            return En,Ei,Ec
+        # O-Au interactions
+        else
+            En=V00_AuO(distbtwn)
+            Ei=V11_AuO(distbtwn)
+            Ec=V01_AuO(distbtwn)
+            return En,Ei,Ec
+        end
+    end
+end
+
+############################################################################################################
+
+function getVij_NOAu(i,j,distbtwn,cosθ,dz)
+    neutral_only ? Vij_neutral(i,j,distbtwn) : Vij_diabatic(i,j,distbtwn,cosθ,dz)
 end
 
 ############################################################################################################
@@ -256,8 +322,8 @@ end
     sysunits=sys_NOAu.force_units
 
     # get eigenvalues
-    λ1=storeEs[end,3]
-    λ2=storeEs[end,4]
+    λ1=storeEs[end,2]
+    λ2=storeEs[end,3]
     a=λ1^2
     b=λ2^2
     c=2*λ1*λ2
@@ -273,6 +339,44 @@ end
     cosθ=getcosth(Ncoords,Ocoords)
     dz=getzcom(mN,mO,Ncoords,Ocoords)
 
+    F=getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
+    F*u .|> sysunits
+end
+
+############################################################################################################
+
+"""
+force due to ij pair on neutral PES (neutral_only=true). for NO/Au sys
+"""
+function Fij_neutral(i,j,distbtwn,a)
+    if i==1
+        # NO interaction
+        if j==2
+            Fn=F00_NO(distbtwn)
+            Fn*a
+        # N-Au interaction
+        else
+            Fn=F00_AuN(distbtwn)
+            Fn*a
+        end
+    else
+        # NO interaction. set to 0 to avoid double counting
+        if j==1
+            0u"N/mol"
+        # O-Au interactions
+        else   
+            Fn=F00_AuO(distbtwn)
+            Fn*a
+        end
+    end
+end
+
+############################################################################################################
+
+"""
+force due to ij pair on diabatic PES (neutral_only=false). for NO/Au sys
+"""
+function Fij_diabatic(i,j,distbtwn,cosθ,dz,a,b,c)
     if i==1
         # NO interaction
         if j==2
@@ -280,32 +384,32 @@ end
             Fi=F11_NO(distbtwn)
             Fc=F11_image(dz)
             
-            F=Fn*a+Fi*b+Fc*c
-
-            F*u .|> sysunits
+            Fn*a+Fi*b+Fc*c
         # N-Au interaction
         else
             Fn=F00_AuN(distbtwn)
             Fi=F11_AuN(distbtwn,cosθ)
             Fc=F01_AuN(distbtwn)
             
-            F=Fn*a+Fi*b+Fc*c
-
-            F*u .|> sysunits
+            Fn*a+Fi*b+Fc*c
         end
     else
         # NO interaction. set to 0 to avoid double counting
         if j==1
-            SVector{3}(zeros(3)sysunits)
+            0u"N/mol"
         # O-Au interactions
         else   
             Fn=F00_AuO(distbtwn)
             Fi=F11_AuO(distbtwn)
             Fc=F01_AuO(distbtwn)
                         
-            F=Fn*a+Fi*b+Fc*c
-
-            F*u .|> sysunits
+            Fn*a+Fi*b+Fc*c
         end
     end
+end
+
+############################################################################################################
+
+function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
+    neutral_only ? Fij_neutral(i,j,distbtwn,a) : Fij_diabatic(i,j,distbtwn,cosθ,dz,a,b,c)
 end
