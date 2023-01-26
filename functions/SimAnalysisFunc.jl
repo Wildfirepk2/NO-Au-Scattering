@@ -298,7 +298,7 @@ function outputsummary(sys,dt,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"    Forces: $logdtF ($logdtFmd)")
         println(io,"    Velocities: $logdtV ($logdtVmd)")
         println(io)
-        println(io,"Final Slab Total Energy: $finalE ($finalEmd)")
+        println(io,"Final System Total Energy: $finalE ($finalEmd)")
     end
 end
 

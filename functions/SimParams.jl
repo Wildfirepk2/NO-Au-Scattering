@@ -2,8 +2,6 @@
 # variables are DataFrames. 
 # some DataFrames' columns have only 1 entry so must be referenced by VAR.COL[1]
 
-# checked: 11/1/22 (including all input files)
-
 ############################################################################################################
 
 function initAuParams()
@@ -152,7 +150,7 @@ end
 ############################################################################################################
 
 """
-get equilibrated au coords
+get equilibrated au coords from previous run
 """
 function getEquilAuCoords()
     audir=getAuDirPath("results")
@@ -168,15 +166,14 @@ end
 
 function initNOCoords()
     r=no.r[1]
-    molec=1
-    nocoords=place_diatomics(molec,virtboxdims,r)
+    n_molec=1
+    nocoords=place_diatomics(n_molec,virtboxdims,r)
 
 	# place N 12 above Au surface
 	placeat=12u"Å"+maximum(au.z)
 	nz=nocoords[1][3]
 	delta=placeat-nz
 	[nocoords[i]+[0u"Å",0u"Å",delta] for i in eachindex(nocoords)]
-	# nocoords.+[0u"Å",0u"Å",delta]
 end
 
 ############################################################################################################
@@ -198,10 +195,12 @@ end
 ############################################################################################################
 
 function initNOAuVelocities()
-	uv=normalize(SVector{3}(rand(-10:10,3)))
-	uvneg=uv[3]<0 ? uv : -uv
+	uv=normalize(SVector{3}(rand(-10:10,3))) # unit vector
+	uvneg=uv[3]<0 ? uv : -uv # downward velocity. moving toward surface
+
+	# convert incident molecule energy to velocity
 	e=no.Et_i[1]
-	mass=(no.mN[1]+no.mO[1])*N_A
+	mass=(no.mN[1]+no.mO[1])*N_A # now in kg/mol
 	v=uvneg*sqrt(2*e/mass)
 	
 	nov=[v,v]

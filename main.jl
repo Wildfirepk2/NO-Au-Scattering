@@ -1,6 +1,5 @@
 # adiabatic molecular dynamics (MD) of NO scattering off of an Au(111) surface
 
-# checked: 10/27/22
 ############################################################################################################
 
 # initialize all functions
@@ -49,8 +48,10 @@ const auatomcutoff=397
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
-### scale down factor on steps for debugging. f=1 no scaling. f=5000: 1 step
-scalefactor=1
+### scale down factor on steps for debugging. f=1 -> no scaling.
+# au: f=5000 -> 1 step
+# no/au: f=1e5 -> 1 step
+scalefactor::Int64=1e5
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64=param.Nsteps_eq[1]/scalefactor
@@ -69,29 +70,32 @@ const noaurundesc="NO-Au sc"
 
 ############################################################################################################
 
-# other variables
-
-# copied from fortran
-Av_Et = 0
-Av_theta = 0
-Av_weighted_theta = 0
-Norm_weighted_theta = 0
-Av_Evib = 0
-Av_Er = 0
-Av_EAu = 0
-NTRAP = 0
-
-############################################################################################################
+# running MD with velocity verlet
 
 # check if Au slab is equilibrated. if not, equilibrate Au slab
 runAuSlabEquilibration()
+
+# store eigenvalues for f func
+headers = ["no", "Eg", "λ1", "λ2"]
+# fix later for specific types
+storeEs=DataFrame([name => [] for name in headers])
+
+# NO scattering off of eq Au surface
+runNOAuTrajectory()
+
+############################################################################################################
 
 # make file for holding no/au related functions
 
 # make simulator/system variables for no/au in global. later on put in separate file like au slab equilibration
 
-headers = ["no", "Eg", "λ1", "λ2"]
-# fix later for specific types
-storeEs=DataFrame([name => [] for name in headers])
-
-runNOAuTrajectory()
+# other variables
+# copied from fortran
+# Av_Et = 0
+# Av_theta = 0
+# Av_weighted_theta = 0
+# Norm_weighted_theta = 0
+# Av_Evib = 0
+# Av_Er = 0
+# Av_EAu = 0
+# NTRAP = 0

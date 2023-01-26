@@ -1,7 +1,5 @@
 # functions leading up to and including Au-Au interactions.
 
-# checked: 10/27/22
-
 ############################################################################################################
 
 """
@@ -13,30 +11,6 @@ function removeiipairs!(nn::Vector{Vector{Int64}})
 	for i in eachindex(nn)
 		for j in eachindex(nn[i])
 			if nn[i][j]==i
-				splice!(nn[i],j)
-				break
-			end
-		end
-	end
-end
-
-############################################################################################################
-
-"""
-removes atom 1/2 pairs from nearest neighbor list. may scrap later
-
-called in Molly.find_neighbors(NONeighborFinder) only.
-"""	
-function remove12pairs!(nn::Vector{Vector{Int64}})
-	for i in eachindex(nn)
-		for j in eachindex(nn[i])
-			if nn[i][j]==1
-				splice!(nn[i],j)
-				break
-			end
-		end
-		for j in eachindex(nn[i])
-			if nn[i][j]==2
 				splice!(nn[i],j)
 				break
 			end
@@ -235,91 +209,4 @@ see begbie p193 for matrices
 """
 function initAijarray()
 	[[Aij[j] for j in nncase[i]] for i in eachindex(nncase)]
-end
-
-############################################################################################################
-
-"""
-outputs forces on atom i due to distance away from each nn as array of arrays
-
-called only in F_Au()
-"""
-function getnnifarray(rij_i,i)
-	# F=−Aij(nn case no)*rij
-	[-Aijarray[i][j]*rij_i[:,j] for j in axes(rij_i,2)]
-end
-
-############################################################################################################
-
-"""
-outputs forces on each Au Atom (due to nn's) as array of arrays
-
-input is matrix with current Au coords (xyz stored in columns)
-
-see roy art, p7, eq 20. see fortran GetFNN2
-"""
-function F_Au(rAu;inVfunc::Bool=false)
-	# get current nn distances for each atom. array of matrices
-	drij=getdrij(rAu)
-
-	# find distances away from equilibrium positions. array of matrices
-	rij=drij-r0ij
-
-	# temp array with forces on each atom due to nn's. array of arrays of arrays
-	farray=[getnnifarray(rij[i],i) for i in eachindex(rij)]
-
-	if inVfunc
-		# only if called in V_AuAu function. option added for speed
-		return rij,farray
-	else
-		# normal behavior. return only forces
-
-		# sum forces on each atom
-		f=sum.(farray)
-		return f
-	end
-end
-
-############################################################################################################
-
-"""
-gets v for atom i. 
-	
-called only in V_AuAu()
-"""
-function getvi(rij_i,farray_i)
-	# array of v's from each nn. V=r*-F. F=-A*r
-	varray=[dot(rij_i[:,j],-farray_i[j]) for j in axes(rij_i,2)]
-
-	# total v for atom i is sum of v's due to each nn
-	sum(varray)
-end
-
-############################################################################################################
-
-"""
-outputs potential energy of Au slab due to nn's
-
-input is matrix with current Au coords (xyz stored in columns)
-
-see roy art, p7, eq 20. see fortran GetVNN2
-"""
-function V_AuAu(rAu;fv::Bool=false)
-	# V_AuAu employs same temp variables as F_Au. rij: array of matrices. farray: array of arrays of arrays
-	rij,farray=F_Au(rAu;inVfunc=true)
-
-	# v for each atom. array
-	varray=[getvi(rij[i],farray[i]) for i in eachindex(rij)]
-
-	# total v is sum of v's for each atom. divide by 2 because of v definition
-	v=sum(varray)/2
-
-	if fv
-		# return force and potential energy simulataneously. option added for speed
-		f=sum.(farray)
-		return f,v
-	else
-		# normal behavior. return only potential energy
-		return v
-	end
 end

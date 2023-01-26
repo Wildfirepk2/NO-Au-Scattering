@@ -1,7 +1,5 @@
 # functions for NO/Au interactions on ground, excited, and coupled states. functions based on forms in roy art.
 
-# checked: 10/25/22
-
 ############################################################################################################
 
 """
@@ -370,10 +368,12 @@ end
 
 """
 helper function: get cos(θ) between two vectors
+
+cos(θ)=(zO-zN)/|rN-rO|
 """
-function getcosth(v1::SVector,v2::SVector)
-	dz=v2[3]-v1[3]
-    r=euclidean(v1,v2)
+function getcosth(rN::SVector,rO::SVector)
+	dz=rO[3]-rN[3]
+    r=euclidean(rN,rO)
     dz/r
 end
 
@@ -389,7 +389,7 @@ end
 ############################################################################################################
 
 """
-helper function: get the perpendicular distance of the center of mass of the NO molecule from the surface plane (z=0)
+helper function: get zcom, the perpendicular distance of the center of mass of the NO molecule from the surface plane (z≈7.2Å)
 """
 function getzcom(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)
 	com=getCOM(m1, m2, r1, r2)

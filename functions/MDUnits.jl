@@ -8,8 +8,6 @@
 # velocity = Angstrom/(10 femtoseconds) = 10^4 m/s
 # energy = 100 kJ/mol
 
-# checked: 10/25/22
-
 ###########################################################################################
 
 # necessary line for custom units

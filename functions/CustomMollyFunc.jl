@@ -16,7 +16,6 @@ end
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
     fs[i] -= fdr_ustrip # negative force just works. investigate later
-    # println("using custom force function")
     return nothing
 end
 
@@ -43,23 +42,6 @@ end
     # fetch system's force units. needed for Molly compatibility. may change later
     sysunits=sys_Au.force_units
 
-    # iterating through all NNs. may change later
-
-    # # dist of nn pair away from equilibrium. static array
-    # rij=vector(r0ij[i][:,idx_j],vec_ij,boundary)
-
-    # # force nn pair exerts on atom i. static array
-    # Fij=SVector{3}(-Aijarray[i][idx_j]*rij)
-
-    # # tmp step counter. updates when loop reaches cutoff atom/394 pair
-    # if i==auatomcutoff-1 && j==394
-    #     println("Step $step_no")
-    #     global step_no+=1
-    # end
-
-    # # return force in system units
-    # Fij .|> sysunits
-
     # no forces on atoms in last layer
     if i<auatomcutoff
         # normal operation
@@ -73,12 +55,6 @@ end
         # return force in system units
         Fij .|> sysunits
     else
-        # tmp step counter. updates when loop reaches atom N/526 pair
-        if i==au.N[1] && j==526
-            println("Step $step_no")
-            global step_no+=1
-        end
-
         # no force on Au atoms
         SVector{3}(zeros(3)sysunits)
     end
@@ -183,10 +159,11 @@ function Molly.find_neighbors(s,
 	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
 
     # molly neighbor object
-	nn_molly=NeighborList(length(nntuples), nntuples)
+	NeighborList(length(nntuples), nntuples)
 
     # above looks ok
 
+    # parallelization
     # dist_unit = unit(first(first(s.coords)))
 #     bv = ustrip.(dist_unit, s.boundary)
 #     btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
@@ -210,93 +187,6 @@ end
 
 ############################################################################################################
 
-# [OLD] potential energy (V) for NO/Au scattering. calculating V for each atom due to NN. molly will sum all Vs. similar to force function. 
-# inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath. 
-# due to truncated NN list, doesnt calc V for back layer. ok since V would be constant (layer doesnt move)
-# see fortran ENERGY_MATRIX
-@inline @inbounds function Molly.potential_energy(inter::NOAuInteraction,
-                            dr,
-                            coord_i,
-                            coord_j,
-                            atom_i,
-                            atom_j,
-                            boundary)    
-    # fetch atom indices
-    i=atom_i.index
-    j=atom_j.index
-    tuple=(i,j)
-    
-    distbtwn=euclidean(dr,zeros(3)u"Å")
-
-    
-    Ncoords=sys_NOAu.coords[1]
-    Ocoords=sys_NOAu.coords[2]
-    mN=no.mN[1]
-    mO=no.mO[1]
-    cosθ=getcosth(Ncoords,Ocoords)
-    dz=getzcom(mN,mO,Ncoords,Ocoords)
-
-    # N interactions
-    if i==1
-        # NO interaction + 1 time V_image, WF, Ea calc
-        if j==2
-            En=V00_NO(distbtwn)
-            Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
-            Ec=0
-            
-            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
-            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
-            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
-
-            push!(storeEs,[tuple,Eg,λ1,λ2])
-            return Eg
-        # N-Au interaction
-        else
-            En=V00_AuN(distbtwn)
-            Ei=V11_AuN(distbtwn,cosθ)
-            Ec=V01_AuN(distbtwn)
-            
-            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
-            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
-            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
-
-            push!(storeEs,[tuple,Eg,λ1,λ2])
-            return Eg
-        end
-    # O interactions
-    else
-        # NO interaction. set to 0 to avoid double counting
-        if j==1
-            0
-        # O-Au interaction
-        else
-            En=V00_AuO(distbtwn)
-            Ei=V11_AuO(distbtwn)
-            Ec=V01_AuO(distbtwn)
-            
-            Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
-            λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
-            λ2=-Ec/√((Ei-Eg)^2+Ec^2)
-
-            push!(storeEs,[tuple,Eg,λ1,λ2])
-            return Eg
-        end
-    end
-
-    # En=V00_AuN(distbtwn)+V00_AuO(distbtwn)+V00_NO(distbtwn)
-    # Ei=V11_AuN(distbtwn,cosθ)+V11_AuO(distbtwn)+V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
-    # Ec=V01_AuN(distbtwn)+V01_AuO(distbtwn)
-    
-    # Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
-    # λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
-    # λ2=-Ec/√((Ei-Eg)^2+Ec^2)
-
-    # push!(storeEs,[tuple,Eg,λ1,λ2])
-    # return Eg
-end
-
-############################################################################################################
-
 # alter molly PE function above for NO/Au. need to calculate E all at once
 function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}}, neighbors=nothing)
     En=0 * s.energy_units
@@ -304,6 +194,7 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     Ec=0 * s.energy_units
 
     @inbounds for ni in 1:neighbors.n
+        # setup for E calc
         i, j, weight_14 = neighbors.list[ni]
         dr = vector(s.coords[i], s.coords[j], s.boundary)
         distbtwn=euclidean(dr,zeros(3)u"Å")
@@ -336,10 +227,12 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
         end
     end
 
+    # final ground state energy/eigenvalues
     Eg=1/2*(En+Ei-√((En-Ei)^2+4Ec^2))
     λ1=(Ei-Eg)/√((Ei-Eg)^2+Ec^2)
     λ2=-Ec/√((Ei-Eg)^2+Ec^2)
 
+    # store eigenvalues for force calculation
     push!(storeEs,[step_no,Eg,λ1,λ2])
     
     return uconvert(s.energy_units, Eg)
@@ -347,9 +240,9 @@ end
 
 ############################################################################################################
 
-# force function for Au slab equilibration. calculating F for each atom due to NN. 
+# force function for NO/Au scattering. calculating F for each atom due to NN. 
 # inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
-# see roy art, p7, eq 20. see fortran GetFNN2
+# see fortran FORCE_MATRIX
 @inline @inbounds function Molly.force(inter::NOAuInteraction,
                             vec_ij,
                             coord_i,
@@ -362,12 +255,14 @@ end
     j=atom_j.index
     sysunits=sys_NOAu.force_units
 
+    # get eigenvalues
     λ1=storeEs[end,3]
     λ2=storeEs[end,4]
     a=λ1^2
     b=λ2^2
     c=2*λ1*λ2
 
+    # setup for force calculation
     distbtwn=euclidean(vec_ij,zeros(3)u"Å")
     u=normalize(vec_ij)
 
