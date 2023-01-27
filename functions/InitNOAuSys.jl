@@ -27,6 +27,11 @@ function initNOCoords()
 	nz=nocoords[1][3]
 	delta=placeat-nz
 	[nocoords[i]+[0u"Å",0u"Å",delta] for i in eachindex(nocoords)]
+
+	# \debugging
+	zN=12u"Å"+maximum(au.z)
+	zO=zN+r
+	[SA[3u"Å",3u"Å",zN],SA[3u"Å",3u"Å",zO]]
 end
 
 ############################################################################################################
@@ -59,6 +64,10 @@ function initNOAuVelocities()
 	nov=[v,v]
 	auv=[velocity(1u"u", 0u"K") for _ in 1:au.N[1]]
 	vcat(nov,auv)
+
+	# \debugging
+	t=[SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)],SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)]]
+	vcat(t,auv)
 end
 
 ############################################################################################################

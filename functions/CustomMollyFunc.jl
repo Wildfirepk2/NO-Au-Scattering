@@ -219,8 +219,15 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
 
     # store eigenvalues for force calculation
     push!(storeEs,[Eg,λ1,λ2])
-    
-    return uconvert(s.energy_units, Eg)
+
+    # case for neu/ion?
+    if neutral_PES_active && ionic_PES_active && coupled_PES_active
+        return uconvert(s.energy_units, Eg)
+    elseif ionic_PES_active
+        return uconvert(s.energy_units, Ei)
+    else
+        return uconvert(s.energy_units, En)
+    end
 end
 
 ############################################################################################################
@@ -351,5 +358,13 @@ function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
             end
         end
     end
-    Fn*a+Fi*b+Fc*c
+
+    # case for neu/ion?
+    if neutral_PES_active && ionic_PES_active && coupled_PES_active
+        return Fn*a+Fi*b+Fc*c
+    elseif ionic_PES_active
+        return Fi
+    else
+        return Fn
+    end
 end
