@@ -276,6 +276,22 @@ end
 
 ############################################################################################################
 
+# mostly a copy of molly force! (level above force). needed to freeze Au atoms in scattering FOR NOW
+@inline @inbounds function Molly.force!(fs, inter::NOAuInteraction, s::System, i::Integer, j::Integer, force_units, weight_14::Bool=false)
+    dr = vector(s.coords[i], s.coords[j], s.boundary)
+    fdr = force(inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary, weight_14)
+    Molly.check_force_units(fdr, force_units)
+    fdr_ustrip = ustrip.(fdr)
+    fs[i] -= fdr_ustrip # not adding force to fs[j]: freezes Au atoms
+    # only add for NO interaction
+    if j==2
+        fs[j] += fdr_ustrip
+    end
+    return nothing
+end
+
+############################################################################################################
+
 # force function for NO/Au scattering. calculating F for each atom due to NN. 
 # inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 # see fortran FORCE_MATRIX

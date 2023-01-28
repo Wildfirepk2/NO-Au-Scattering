@@ -99,6 +99,36 @@ end
 ############################################################################################################
 
 """
+output atom i z coords w time to excel file + make graph
+"""
+function outputallatomizcoords(sys,dt,atom_i,path=".")
+    # logging interval. ie log coords after every $stepslog steps
+    stepslog=sys.loggers.coords.n_steps
+
+    # number of logs
+    nsteps=length(sys.loggers.coords.history)
+
+    # time between logs
+    dtlog=stepslog*dt
+
+    # tmp vars for time/coords + converted to MD units
+    z_surf=maximum(au.z)
+    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+    zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
+    
+    # write to excel file at $path
+    data=DataFrame(t=time,z=zcoords)
+    file="$path/z$atom_i-z_surf v time.xlsx"
+    write_xlsx(file,data)
+    
+    # make zcoord vs time graph
+    graphdesc = "Atom $atom_i Height Above Surface with Time"
+    outputgraph(graphdesc,data,path)
+end
+
+############################################################################################################
+
+"""
 output graph given DataFrame. called in outputsysE
 """
 function outputgraph(desc,df,path=".")
@@ -354,6 +384,7 @@ function outputsysinfo(sys,dt,systype,path=".")
 
     # output quantities to excel file in separate folder
     outputallsyscoords(sys,dt,path)
+    outputallatomizcoords(sys,dt,1,path)
     outputsysE(sys,dt,systype,path)
     outputallsysforces(sys,dt,path)
     outputallsysvelocities(sys,dt,path)

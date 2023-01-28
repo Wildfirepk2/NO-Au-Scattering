@@ -52,7 +52,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor::Int64=1
+scalefactor::Int64=1e1
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
@@ -67,7 +67,7 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-ION"
+const noaurundesc="NO-Au sc-d-ION"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=false
