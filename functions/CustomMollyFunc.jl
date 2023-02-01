@@ -283,10 +283,11 @@ end
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
     fs[i] -= fdr_ustrip # not adding force to fs[j]: freezes Au atoms
-    # only add for NO interaction
-    if j==2
-        fs[j] += fdr_ustrip
-    end
+    # \fix. if j>2, then add force to fs[j]. do once Au is not frozen
+    # # only add for NO interaction
+    # if j==2
+    #     fs[j] += fdr_ustrip
+    # end
     return nothing
 end
 
@@ -325,16 +326,17 @@ end
     cosθ=getcosth(Ncoords,Ocoords)
     dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-    F=getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
-    F*u .|> sysunits
+    F=getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
+    F .|> sysunits
 end
 
 ############################################################################################################
 
-function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
+function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
     Fn=0u"N/mol"
     Fi=0u"N/mol"
     Fc=0u"N/mol"
+    Fimg=0u"N/mol"
 
     if i==1
         # NO interaction
@@ -344,9 +346,11 @@ function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
             end
             if ionic_PES_active
                 Fi=F11_NO(distbtwn)
-            end
-            if coupled_PES_active
-                Fc=F11_image(dz)
+
+                mN=no.mN[1]
+                mO=no.mO[1]
+                mt=mN+mO
+                Fimg=F11_image(dz)*mN/mt
             end
         # N-Au interaction
         else
@@ -361,8 +365,21 @@ function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
             end
         end
     else
-        # O-Au interactions 
-        if j>1
+        # ON interaction
+        if j==1
+            if neutral_PES_active
+                Fn=F00_NO(distbtwn)
+            end
+            if ionic_PES_active
+                Fi=F11_NO(distbtwn)
+
+                mN=no.mN[1]
+                mO=no.mO[1]
+                mt=mN+mO
+                Fimg=F11_image(dz)*mO/mt
+            end
+        # O-Au interactions
+        else
             if neutral_PES_active
                 Fn=F00_AuO(distbtwn)
             end
@@ -377,10 +394,13 @@ function getFij_NOAu(i,j,distbtwn,cosθ,dz,a,b,c)
 
     # case for neu/ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
-        return Fn*a+Fi*b+Fc*c
+        Fi_mod=Fi*u-Fimg*[0,0,1]
+        Fg=Fn*a*u+Fi_mod*b+Fc*c*u
+        return Fg
     elseif ionic_PES_active
-        return Fi
+        Fi_mod=Fi*u-Fimg*[0,0,1]
+        return Fi_mod
     else
-        return Fn
+        return Fn*u
     end
 end

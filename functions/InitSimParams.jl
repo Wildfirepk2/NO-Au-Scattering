@@ -94,9 +94,6 @@ function initPESParamIonic()
 	ion.γ1*=u"1/Å"
 	ion.r1_NO*=u"Å"
 
-	# add height since surface raised
-	ion.zimage[1]+=maximum(initAuParams().z)
-
 	# adding NA for compatibility with kJ/mol
 	ion.ϕ*=u"eV"*N_A
 	ion.Ea*=u"eV"*N_A # is negative
