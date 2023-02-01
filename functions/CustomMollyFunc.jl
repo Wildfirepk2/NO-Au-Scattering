@@ -251,7 +251,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_AuN(distbtwn)
             end
             if ionic_PES_active
-                Ei=V11_AuN(distbtwn,cosθ)
+                # Ei=V11_AuN(distbtwn,cosθ)
             end
             if coupled_PES_active
                 Ec=V01_AuN(distbtwn)
@@ -358,7 +358,7 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 Fn=F00_AuN(distbtwn)
             end
             if ionic_PES_active
-                Fi=F11_AuN(distbtwn,cosθ)
+                # Fi=F11_AuN(distbtwn,cosθ)
             end
             if coupled_PES_active
                 Fc=F01_AuN(distbtwn)
