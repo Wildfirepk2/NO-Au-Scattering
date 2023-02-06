@@ -203,7 +203,8 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
         Ocoords=s.coords[2]
         mN=s.atoms[1].mass
         mO=s.atoms[2].mass
-        cosθ=getcosth(Ncoords,Ocoords)
+        bound=s.boundary
+        cosθ=getcosth(Ncoords,Ocoords,bound)
         dz=getzcom(mN,mO,Ncoords,Ocoords)
 
         t_En,t_Ei,t_Ec=getVij_NOAu(i,j,distbtwn,cosθ,dz)
@@ -220,7 +221,7 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     # store eigenvalues for force calculation
     push!(storeEs,[Eg,λ1,λ2])
 
-    # case for neu/ion?
+    # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
         return uconvert(s.energy_units, Eg)
     elseif ionic_PES_active
@@ -243,7 +244,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_NO(distbtwn)
             end
             if ionic_PES_active
-                Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+                # Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
             end
         # N-Au interaction
         else
@@ -251,7 +252,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_AuN(distbtwn)
             end
             if ionic_PES_active
-                # Ei=V11_AuN(distbtwn,cosθ)
+                Ei=V11_AuN(distbtwn,cosθ)
             end
             if coupled_PES_active
                 Ec=V01_AuN(distbtwn)
@@ -264,7 +265,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_AuO(distbtwn)
             end
             if ionic_PES_active
-                Ei=V11_AuO(distbtwn)
+                # Ei=V11_AuO(distbtwn)
             end
             if coupled_PES_active
                 Ec=V01_AuO(distbtwn)
@@ -323,7 +324,8 @@ end
     Ocoords=sys_NOAu.coords[2]
     mN=sys_NOAu.atoms[1].mass
     mO=sys_NOAu.atoms[2].mass
-    cosθ=getcosth(Ncoords,Ocoords)
+    bound=sys_NOAu.boundary
+    cosθ=getcosth(Ncoords,Ocoords,bound)
     dz=getzcom(mN,mO,Ncoords,Ocoords)
 
     F=getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
@@ -345,12 +347,12 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 Fn=F00_NO(distbtwn)
             end
             if ionic_PES_active
-                Fi=F11_NO(distbtwn)
+                # Fi=F11_NO(distbtwn)
 
-                mN=no.mN[1]
-                mO=no.mO[1]
-                mt=mN+mO
-                Fimg=F11_image(dz)*mN/mt
+                # mN=no.mN[1]
+                # mO=no.mO[1]
+                # mt=mN+mO
+                # Fimg=F11_image(dz)*mN/mt
             end
         # N-Au interaction
         else
@@ -358,7 +360,7 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 Fn=F00_AuN(distbtwn)
             end
             if ionic_PES_active
-                # Fi=F11_AuN(distbtwn,cosθ)
+                Fi=F11_AuN(distbtwn,cosθ)
             end
             if coupled_PES_active
                 Fc=F01_AuN(distbtwn)
@@ -371,12 +373,12 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 Fn=F00_NO(distbtwn)
             end
             if ionic_PES_active
-                Fi=F11_NO(distbtwn)
+                # Fi=F11_NO(distbtwn)
 
-                mN=no.mN[1]
-                mO=no.mO[1]
-                mt=mN+mO
-                Fimg=F11_image(dz)*mO/mt
+                # mN=no.mN[1]
+                # mO=no.mO[1]
+                # mt=mN+mO
+                # Fimg=F11_image(dz)*mO/mt
             end
         # O-Au interactions
         else
@@ -384,7 +386,7 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 Fn=F00_AuO(distbtwn)
             end
             if ionic_PES_active
-                Fi=F11_AuO(distbtwn)
+                # Fi=F11_AuO(distbtwn)
             end
             if coupled_PES_active
                 Fc=F01_AuO(distbtwn)
@@ -392,7 +394,7 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
         end
     end
 
-    # case for neu/ion?
+    # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
         Fi_mod=Fi*u-Fimg*[0,0,1]
         Fg=Fn*a*u+Fi_mod*b+Fc*c*u

@@ -85,7 +85,7 @@ dr=|ri-rN|
 
 cos_th=(zO-zN)/|rN-rO|
 """
-function V11_AuN(dr::Unitful.Length,cos_th::Float64)
+function V11_AuN(dr::Unitful.Length,cos_th)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
 	r1_AuN=PES_ionic.r1_AuN[1]
@@ -269,7 +269,7 @@ dr=|ri-rN|
 
 cos_th=(zO-zN)/|rN-rO|
 """
-function F11_AuN(dr::Unitful.Length,cos_th::Float64)
+function F11_AuN(dr::Unitful.Length,cos_th)
 	B1=PES_ionic.B1[1]
 	β1=PES_ionic.β1[1]
 	r1_AuN=PES_ionic.r1_AuN[1]
@@ -371,9 +371,11 @@ helper function: get cos(θ) between two vectors
 
 cos(θ)=(zO-zN)/|rN-rO|
 """
-function getcosth(rN::SVector,rO::SVector)
+function getcosth(rN::SVector,rO::SVector,b::CubicBoundary)
 	dz=rO[3]-rN[3]
-    r=euclidean(rN,rO)
+	sl=b.side_lengths
+    # r=euclidean(rN,rO)
+	r=peuclidean(rN,rO,sl)
     dz/r
 end
 
