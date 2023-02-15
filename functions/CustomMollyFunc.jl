@@ -280,7 +280,7 @@ end
 # mostly a copy of molly force! (level above force). needed to freeze Au atoms in scattering FOR NOW
 @inline @inbounds function Molly.force!(fs, inter::NOAuInteraction, s::System, i::Integer, j::Integer, force_units, weight_14::Bool=false)
     dr = vector(s.coords[i], s.coords[j], s.boundary)
-    fdr = force(inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary, weight_14)
+    fdr = force(s, inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary)
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
     fs[i] -= fdr_ustrip # not adding force to fs[j]: freezes Au atoms
@@ -297,7 +297,8 @@ end
 # force function for NO/Au scattering. calculating F for each atom due to NN. 
 # inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 # see fortran FORCE_MATRIX
-@inline @inbounds function Molly.force(inter::NOAuInteraction,
+@inline @inbounds function Molly.force(s::System,
+                            inter::NOAuInteraction,
                             vec_ij,
                             coord_i,
                             coord_j,
@@ -307,7 +308,7 @@ end
     # fetch atom indices
     i=atom_i.index
     j=atom_j.index
-    sysunits=sys_NOAu.force_units
+    sysunits=s.force_units
 
     # get eigenvalues
     λ1=storeEs[end,2]
@@ -320,25 +321,28 @@ end
     distbtwn=euclidean(vec_ij,zeros(3)u"Å")
     u=normalize(vec_ij)
 
-    Ncoords=sys_NOAu.coords[1]
-    Ocoords=sys_NOAu.coords[2]
-    mN=sys_NOAu.atoms[1].mass
-    mO=sys_NOAu.atoms[2].mass
-    bound=sys_NOAu.boundary
-    cosθ=getcosth(Ncoords,Ocoords,bound)
+    Ncoords=s.coords[1]
+    Ocoords=s.coords[2]
+    vecON=vector(Ocoords,Ncoords,boundary)
+    uON=normalize(vecON)
+    rNO=peuclidean(Ncoords,Ocoords,boundary.side_lengths)
+    mN=s.atoms[1].mass
+    mO=s.atoms[2].mass
+    cosθ=getcosth(Ncoords,Ocoords,boundary)
     dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-    F=getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
+    F=getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
     F .|> sysunits
 end
 
 ############################################################################################################
 
-function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
+function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
     Fn=0u"N/mol"
     Fi=0u"N/mol"
     Fc=0u"N/mol"
     Fimg=0u"N/mol"
+    F_AuNc=zeros(3)u"N/mol"
 
     if i==1
         # NO interaction
@@ -361,6 +365,7 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
             end
             if ionic_PES_active
                 Fi=F11_AuN(distbtwn,cosθ)
+                F_AuNc=F11_AuNcutoff(distbtwn,cosθ,rNO,uON)
             end
             if coupled_PES_active
                 Fc=F01_AuN(distbtwn)
@@ -379,6 +384,9 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
                 # mO=no.mO[1]
                 # mt=mN+mO
                 # Fimg=F11_image(dz)*mO/mt
+                if !isempty(FNO_AuN)
+                    F_AuNc=F11_AuNcutoff() 
+                end
             end
         # O-Au interactions
         else
@@ -396,11 +404,11 @@ function getFij_NOAu(i,j,distbtwn,u,cosθ,dz,a,b,c)
 
     # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
-        Fi_mod=Fi*u-Fimg*[0,0,1]
+        Fi_mod=Fi*u-[0u"N/mol",0u"N/mol",Fimg]+F_AuNc
         Fg=Fn*a*u+Fi_mod*b+Fc*c*u
         return Fg
     elseif ionic_PES_active
-        Fi_mod=Fi*u-Fimg*[0,0,1]
+        Fi_mod=Fi*u-[0u"N/mol",0u"N/mol",Fimg]+F_AuNc
         return Fi_mod
     else
         return Fn*u

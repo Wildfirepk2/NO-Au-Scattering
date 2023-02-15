@@ -67,7 +67,7 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-d-ION-Au frozen-Vimg-only AuN-PBC"
+const noaurundesc="NO-Au sc-d-ION-Au frozen-Vimg-only AuN-PBC-AuNcut-neg O-uON"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=false
@@ -85,6 +85,9 @@ runAuSlabEquilibration()
 headers = ["Eg", "λ1", "λ2"]
 # fix later for specific types
 storeEs=DataFrame([name => [] for name in headers])
+
+# store NO forces from AuN
+FNO_AuN=SVector[]
 
 # NO scattering off of eq Au surface
 runNOAuTrajectory()

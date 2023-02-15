@@ -288,6 +288,57 @@ end
 ############################################################################################################
 
 """
+output force (with direction) on N/O due to F11_AuN. accounts for cutoff? see FORCE_Au_N_ION in fortran
+
+dr=|ri-rN|
+
+cos_th=(zO-zN)/|rN-rO|
+"""
+function F11_AuNcutoff(dr::Unitful.Length,cos_th,rNO,uON)
+	B1=PES_ionic.B1[1]
+	β1=PES_ionic.β1[1]
+	r1_AuN=PES_ionic.r1_AuN[1]
+	r_cutoff=PES_ionic.AuNcutoff[1]
+
+	ddr1=dr-r1_AuN
+	ddr2=r_cutoff-r1_AuN
+
+	eterm1=exp(-β1*ddr1)
+	eterm2=exp(-β1*ddr2)
+
+	fcut1=4B1*eterm1*(uON*cos_th^2/rNO) # vec
+	fzcut1=4B1*eterm1*(cos_th/rNO) # scalar
+	fcut2=4B1*eterm2*(uON*cos_th^2/rNO) # vec. fcut1 in fortran
+	fzcut2=4B1*eterm2*(cos_th/rNO) # scalar. fcut2 in fortran
+
+	f=fcut1-fcut2
+	fz=fzcut1-fzcut2
+	
+	ft=f+[0u"N/mol",0u"N/mol",fz]
+	push!(FNO_AuN,ft)
+	return ft
+end
+
+############################################################################################################
+
+"""
+output force (with direction) on N/O due to F11_AuN. accounts for cutoff? see FORCE_Au_N_ION in fortran
+
+\fix
+O forces
+"""
+function F11_AuNcutoff()
+	# println("FNO_AuN: $FNO_AuN")
+	ft=-sum(FNO_AuN)
+	# println("ft: $ft")
+	empty!(FNO_AuN)
+	# println("FNO_AuN: $FNO_AuN")
+	return ft
+end
+
+############################################################################################################
+
+"""
 N/O force function for excited state. see roy art, p6, eq 16
 
 dr=|rN-rO|
@@ -374,7 +425,6 @@ cos(θ)=(zO-zN)/|rN-rO|
 function getcosth(rN::SVector,rO::SVector,b::CubicBoundary)
 	dz=rO[3]-rN[3]
 	sl=b.side_lengths
-    # r=euclidean(rN,rO)
 	r=peuclidean(rN,rO,sl)
     dz/r
 end
