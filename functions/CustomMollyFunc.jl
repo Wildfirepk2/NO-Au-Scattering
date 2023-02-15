@@ -244,7 +244,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_NO(distbtwn)
             end
             if ionic_PES_active
-                # Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+                Ei=V11_NO(distbtwn)+V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
             end
         # N-Au interaction
         else
@@ -265,7 +265,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 En=V00_AuO(distbtwn)
             end
             if ionic_PES_active
-                # Ei=V11_AuO(distbtwn)
+                Ei=V11_AuO(distbtwn)
             end
             if coupled_PES_active
                 Ec=V01_AuO(distbtwn)
@@ -351,12 +351,12 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
                 Fn=F00_NO(distbtwn)
             end
             if ionic_PES_active
-                # Fi=F11_NO(distbtwn)
+                Fi=F11_NO(distbtwn)
 
-                # mN=no.mN[1]
-                # mO=no.mO[1]
-                # mt=mN+mO
-                # Fimg=F11_image(dz)*mN/mt
+                mN=no.mN[1]
+                mO=no.mO[1]
+                mt=mN+mO
+                Fimg=F11_image(dz)*mN/mt
             end
         # N-Au interaction
         else
@@ -378,12 +378,12 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
                 Fn=F00_NO(distbtwn)
             end
             if ionic_PES_active
-                # Fi=F11_NO(distbtwn)
+                Fi=F11_NO(distbtwn)
 
-                # mN=no.mN[1]
-                # mO=no.mO[1]
-                # mt=mN+mO
-                # Fimg=F11_image(dz)*mO/mt
+                mN=no.mN[1]
+                mO=no.mO[1]
+                mt=mN+mO
+                Fimg=F11_image(dz)*mO/mt
                 if !isempty(FNO_AuN)
                     F_AuNc=F11_AuNcutoff() 
                 end
@@ -394,7 +394,7 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
                 Fn=F00_AuO(distbtwn)
             end
             if ionic_PES_active
-                # Fi=F11_AuO(distbtwn)
+                Fi=F11_AuO(distbtwn)
             end
             if coupled_PES_active
                 Fc=F01_AuO(distbtwn)
