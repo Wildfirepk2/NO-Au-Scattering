@@ -259,7 +259,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
             end
         end
     else
-        # O-Au interactions
+        # O-Au interactions. NOT double counting the NO interaction (j==1)
         if j>1
             if neutral_PES_active
                 En=V00_AuO(distbtwn)
