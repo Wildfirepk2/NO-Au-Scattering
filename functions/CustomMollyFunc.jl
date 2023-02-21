@@ -414,3 +414,43 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
         return Fn*u
     end
 end
+
+############################################################################################################
+
+# mod molly simulate! to fix force fn lagging behind eigenvalues
+function Molly.simulate!(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},
+                    sim::VelocityVerlet,
+                    n_steps::Integer;
+                    n_threads::Integer=Threads.nthreads())
+    sys.coords = wrap_coords.(sys.coords, (sys.boundary,))
+    sim.remove_CM_motion && remove_CM_motion!(sys)
+    neighbors = find_neighbors(sys, sys.neighbor_finder; n_threads=n_threads)
+    run_loggers!(sys, neighbors, 0; n_threads=n_threads)
+    accels_t = accelerations(sys, neighbors; n_threads=n_threads)
+    accels_t_dt = zero(accels_t)
+
+    for step_n in 1:n_steps
+        old_coords = copy(sys.coords)
+        sys.coords += sys.velocities .* sim.dt .+ (Molly.remove_molar.(accels_t) .* sim.dt ^ 2) ./ 2
+
+        apply_constraints!(sys, old_coords, sim.dt)
+        sys.coords = wrap_coords.(sys.coords, (sys.boundary,))
+
+        potential_energy(sys, neighbors) # modded part. forces \lambda to be pushed to storeEs
+        accels_t_dt = accelerations(sys, neighbors; n_threads=n_threads)
+
+        sys.velocities += Molly.remove_molar.(accels_t .+ accels_t_dt) .* sim.dt / 2
+
+        sim.remove_CM_motion && remove_CM_motion!(sys)
+        apply_coupling!(sys, sim.coupling, sim)
+
+        run_loggers!(sys, neighbors, step_n; n_threads=n_threads)
+
+        if step_n != n_steps
+        neighbors = find_neighbors(sys, sys.neighbor_finder, neighbors, step_n;
+                                n_threads=n_threads)
+        accels_t = accels_t_dt
+        end
+    end
+    return sys
+end
