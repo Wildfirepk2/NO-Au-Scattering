@@ -156,7 +156,8 @@ function Molly.find_neighbors(s,
 	removeiipairs!(nn)
 
     # nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
-	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
+	nntuples_no=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]
+    nntuples=vcat(nntuples_no,nntuples_au)
 
     # molly neighbor object
 	NeighborList(length(nntuples), nntuples)
@@ -331,18 +332,19 @@ end
     cosθ=getcosth(Ncoords,Ocoords,boundary)
     dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-    F=getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
+    F=getFij_NOAu(i,j,vec_ij,distbtwn,rNO,uON,u,cosθ,dz,a,b,c,boundary)
     F .|> sysunits
 end
 
 ############################################################################################################
 
-function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
+function getFij_NOAu(i,j,vec_ij,distbtwn,rNO,uON,u,cosθ,dz,a,b,c,boundary)
     Fn=0u"N/mol"
     Fi=0u"N/mol"
     Fc=0u"N/mol"
     Fimg=0u"N/mol"
     F_AuNc=zeros(3)u"N/mol"
+    F_AuAu=zeros(3)u"N/mol"
 
     if i==1
         # NO interaction
@@ -371,7 +373,7 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
                 Fc=F01_AuN(distbtwn)
             end
         end
-    else
+    elseif i==2
         # ON interaction
         if j==1
             if neutral_PES_active
@@ -400,18 +402,39 @@ function getFij_NOAu(i,j,distbtwn,rNO,uON,u,cosθ,dz,a,b,c)
                 Fc=F01_AuO(distbtwn)
             end
         end
+    else
+        # Au-Au interactions
+        it=i-2
+        jt=j-2
+
+        # find j in nn[i] and return index. needed to access items in variables based off nn
+        idx_j=findfirst(isequal(jt), nn[it])
+
+        # no forces on atoms in last layer
+        if it<auatomcutoff
+            # normal operation
+
+            # dist of nn pair away from equilibrium. static array
+            rij=vector(r0ij[it][:,idx_j],vec_ij,boundary)
+
+            # force nn pair exerts on atom i. static array
+            F_AuAu=SVector{3}(-Aijarray[it][idx_j]*rij)
+        else
+            # no force on Au atoms
+            F_AuAu=SVector{3}(zeros(3)u"N/mol")
+        end
     end
 
     # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
         Fi_mod=Fi*u-[0u"N/mol",0u"N/mol",Fimg]+F_AuNc
-        Fg=Fn*a*u+Fi_mod*b+Fc*c*u
+        Fg=Fn*a*u+Fi_mod*b+Fc*c*u+F_AuAu
         return Fg
     elseif ionic_PES_active
         Fi_mod=Fi*u-[0u"N/mol",0u"N/mol",Fimg]+F_AuNc
-        return Fi_mod
+        return Fi_mod+F_AuAu
     else
-        return Fn*u
+        return Fn*u+F_AuAu
     end
 end
 

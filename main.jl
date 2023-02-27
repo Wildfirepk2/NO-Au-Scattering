@@ -43,9 +43,6 @@ no=initNOParams()
 simboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], Inf*u"Å")
 virtboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
 
-# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
-const auatomcutoff=397
-
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
@@ -67,7 +64,7 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-d-DIA-Au frozen-fix Fc-new simulate!"
+const noaurundesc="NO-Au sc-d-DIA-Au move"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true

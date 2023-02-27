@@ -2,6 +2,35 @@
 
 ############################################################################################################
 
+# main variables
+
+# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
+auatomcutoff=399
+
+# 3 x N matrix. xyz coords of each Au atom stored in columns
+rAu=initAuCoords()
+
+# nn: array of arrays. nearest neighbors for each Au atom. ith row corresponds to Au atom i's nearest neighbors (in terms of atom number)
+# nn_molly: molly neighbor object. same as nn. for molly compatibility
+nn,nn_molly=getnn()
+nntuples_au=[(nn_molly.list[i][1]+2,nn_molly.list[i][2]+2,nn_molly.list[i][3]) for i in eachindex(nn_molly.list)]
+
+# array of matrices. initial distances to nearest neighbors for each atom. nn xyz coords stored in columns
+r0ij=getdrij(rAu)
+
+# array of arrays. case number for nearest neighbors for each atom. 
+nncase=getcase()
+
+# Dict mapping nn case number to force matrix.
+Aij=initAij()
+
+# array of arrays of matrices. force matrix for nearest neighbors for each atom. 
+Aijarray=initAijarray()
+
+# slab potential
+
+############################################################################################################
+
 # defining MD propagation method (velocity verlet)
 simulator_NOAu = VelocityVerlet(
     # Time step
@@ -22,7 +51,7 @@ sys_NOAu = System(
     # initial atom coordinates. using static arrays (SA) for Molly compatibility
     coords=initNOAuCoords(),
 
-    # initial atom velocities. NO vel based on √(2E/m). Au slab set to 0
+    # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
     velocities=initNOAuVelocities(),
 
     # system boundary. is periodic in x,y

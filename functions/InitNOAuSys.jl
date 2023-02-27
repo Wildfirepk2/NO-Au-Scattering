@@ -17,6 +17,21 @@ end
 
 ############################################################################################################
 
+"""
+get last au velocities from previous run
+"""
+function getLastAuVelocities()
+    audir=getAuDirPath("results")
+    velfile="$audir/sysvelocities.xlsx"
+    xfvel=XLSX.readxlsx(velfile)
+    sheets=XLSX.sheetnames(xfvel)
+    sheetlastcoord=sheets[end]
+    dfvel=DataFrame(XLSX.readtable(velfile,sheetlastcoord))
+    [SA[dfvel[i,1],dfvel[i,2],dfvel[i,3]]u"v_MD" for i in 1:nrow(dfvel)]
+end
+
+############################################################################################################
+
 function initNOCoords()
     r=no.r[1]
     n_molec=1
@@ -67,7 +82,8 @@ function initNOAuVelocities()
 
 	# \debugging
 	t=[SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)],SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)]]
-	vcat(t,auv)
+	auvt=getLastAuVelocities()
+	vcat(t,auvt)
 end
 
 ############################################################################################################

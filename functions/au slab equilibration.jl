@@ -4,6 +4,9 @@
 
 # main variables
 
+# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
+auatomcutoff=397
+
 # 3 x N matrix. xyz coords of each Au atom stored in columns
 rAu=initAuCoords()
 
