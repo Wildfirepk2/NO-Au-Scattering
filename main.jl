@@ -49,7 +49,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor::Int64=1e1
+scalefactor::Int64=2
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor

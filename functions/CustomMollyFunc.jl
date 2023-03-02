@@ -166,24 +166,24 @@ function Molly.find_neighbors(s,
 
     # parallelization
     # dist_unit = unit(first(first(s.coords)))
-#     bv = ustrip.(dist_unit, s.boundary)
-#     btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
-#     dist_cutoff = ustrip(dist_unit, nf.dist_cutoff)
+    # bv = ustrip.(dist_unit, s.boundary)
+    # btree = BallTree(ustrip_vec.(s.coords), PeriodicEuclidean(bv))
+    # dist_cutoff = ustrip(dist_unit, nf.dist_cutoff)
 
-#     @floop ThreadedEx(basesize = length(s) ÷ n_threads) for i in 1:length(s)
-#         ci = ustrip.(s.coords[i])
-#         nbi = @view nf.nb_matrix[:, i]
-#         w14i = @view nf.matrix_14[:, i]
-#         idxs = inrange(btree, ci, dist_cutoff, true)
-#         for j in idxs
-#             if nbi[j] && i > j
-#                 nn = (i, j, w14i[j])
-#                 @reduce(neighbors_list = append!(Tuple{Int, Int, Bool}[], (nn,)))
-#             end
-#         end
-#     end
+    # @floop ThreadedEx(basesize = length(s) ÷ n_threads) for i in 1:length(s)
+    #     ci = ustrip.(s.coords[i])
+    #     nbi = @view nf.nb_matrix[:, i]
+    #     w14i = @view nf.matrix_14[:, i]
+    #     idxs = inrange(btree, ci, dist_cutoff, true)
+    #     for j in idxs
+    #         if nbi[j] && i > j
+    #             nn = (i, j, w14i[j])
+    #             @reduce(neighbors_list = append!(Tuple{Int, Int, Bool}[], (nn,)))
+    #         end
+    #     end
+    # end
 
-#     return NeighborList(length(neighbors_list), neighbors_list)
+    # return NeighborList(length(neighbors_list), neighbors_list)
 end
 
 ############################################################################################################
