@@ -8,7 +8,13 @@ import PhysicalConstants.CODATA2018: N_A, k_B # Avogadro's number and Boltzmann'
 using NearestNeighbors
 using LinearAlgebra
 using Molly
-using GLMakie
+if isaac
+    using CairoMakie
+else
+    using GLMakie
+end
+# using GLMakie
+# using CairoMakie
 using Dates
 using Distances
 # using FLoops
