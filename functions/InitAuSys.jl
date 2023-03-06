@@ -10,7 +10,7 @@ end
 ############################################################################################################
 
 """
-removes same atom pairs from nearest neighbor list. 
+removes same atom pairs (eg (1,1) and (2,2)) from nearest neighbor list. 
 
 called in getnn() only.
 """	
@@ -21,6 +21,43 @@ function removeiipairs!(nn::Vector{Vector{Int64}})
 				splice!(nn[i],j)
 				break
 			end
+		end
+	end
+end
+
+############################################################################################################
+
+"""
+removes same atom pairs (eg (1,2) and (2,1)) from nearest neighbor list. 
+
+called in getnn() only.
+"""	
+function removesameijpairs!(nn::Vector{Vector{Int64}})
+	for i in eachindex(nn)
+		for j in eachindex(nn[i])
+			atom_ij=nn[i][j]
+			for k in eachindex(nn[atom_ij])
+				if nn[atom_ij][k]==i
+					splice!(nn[atom_ij],k)
+					break
+				end
+			end
+		end
+	end
+end
+
+
+############################################################################################################
+
+"""
+removes empty vectors from nearest neighbor list. 
+
+called in getnn() only.
+"""	
+function removeemptyvec!(nn::Vector{Vector{Int64}})
+	for i in eachindex(nn)
+		if isempty(nn[i])
+			splice!(nn,i)
 		end
 	end
 end
@@ -46,8 +83,10 @@ function getnn()
 	r=dnn_nounit+1
 	nn=inrange(tree,rAu_nounit,r)
 
-	# remove same atom pairs from nn list
+	# prune nn list
 	removeiipairs!(nn)
+	removesameijpairs!(nn)
+	removeemptyvec!(nn)
 
 	# nn list in tuple form for molly compatibility. (atom i, atom j, weight 14=false (0)). then pass to molly neighbor object
 	nntuples=[(i,nn[i][j],false) for i in eachindex(nn) for j in eachindex(nn[i])]

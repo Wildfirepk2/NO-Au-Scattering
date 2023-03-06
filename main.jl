@@ -3,7 +3,7 @@
 ############################################################################################################
 
 # if running on isaac or not
-isaac=true
+isaac=false
 
 ############################################################################################################
 
@@ -54,7 +54,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor::Int64=2
+scalefactor=0.05
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
@@ -66,7 +66,7 @@ const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of Au run
-const aurundesc="Au slab"
+const aurundesc="Au slab-recent-last layer froz"
 
 ### description of NO/Au run
 const noaurundesc="NO-Au sc-d-DIA-Au move-100ei-xy3-isaac"
@@ -92,7 +92,7 @@ storeEs=DataFrame([name => [] for name in headers])
 FNO_AuN=SVector[]
 
 # NO scattering off of eq Au surface
-runNOAuTrajectory()
+# runNOAuTrajectory()
 
 ############################################################################################################
 

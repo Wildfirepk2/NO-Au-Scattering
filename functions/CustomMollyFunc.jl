@@ -16,6 +16,9 @@ end
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
     fs[i] -= fdr_ustrip # negative force just works. investigate later
+    if j<auatomcutoff
+        fs[j] += fdr_ustrip
+    end
     return nothing
 end
 

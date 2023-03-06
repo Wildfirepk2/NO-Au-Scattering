@@ -451,6 +451,7 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Time step: $dt ($dtmd)")
         println(io,"Total time: $ttotal ($ttotalmd)")
         println(io,"Simulation runtime: $runtime")
+        println(io,"Ran on ISAAC: $isaac")
         println(io)
         if desc==noaurundesc
             println(io,"PESs:")
@@ -525,7 +526,9 @@ function outputsysinfo(sys,dt,systype,path=".")
 
     # output quantities to excel file in separate folder
     outputallsyscoords(sys,dt,path)
-    outputallatomizcoords(sys,dt,1,path)
+    if systype==noaurundesc
+        outputallatomizcoords(sys,dt,1,path)
+    end
     outputsysE(sys,dt,systype,path)
     outputallsysforces(sys,dt,path)
     outputallsysvelocities(sys,dt,path)

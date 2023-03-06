@@ -1,0 +1,23 @@
+Au(111) Slab Equilibration
+
+Time of run: 2023-03-05 18:48:08
+Number of atoms: 528
+Number of steps: 100000
+Time step: 0.1 fs (0.01 t_MD)
+Total time: 10000.0 fs (1000.0 t_MD)
+Simulation runtime: 1134.55424994 s
+Ran on ISAAC: false
+
+Steps between logging quantities
+    Coords: 10
+    Energies: 10
+    Forces: 100000
+    Velocities: 100000
+
+Time period between logging quantities
+    Coords: 1.0 fs (0.1 t_MD)
+    Energies: 1.0 fs (0.1 t_MD)
+    Forces: 10000.0 fs (1000.0 t_MD)
+    Velocities: 10000.0 fs (1000.0 t_MD)
+
+Final System Total Energy: 1481.8321517565037 kJ mol⁻¹ (14.82 e_MD)
