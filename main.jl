@@ -19,6 +19,11 @@ include("functions/SimAnalysisFunc.jl")
 
 ############################################################################################################
 
+# \debug
+eis=[100,1000,40,40]u"kJ/mol"
+xys=[3,3,25,3]u"Å"
+xypos=0u"Å"
+
 # parameter variables (type: DataFrame) from input files
 
 # Au parameters: coordinates (x, y, z), number of atoms (N), distance to nearest neighbor (dnn), unit cell length (a), simulation box dimensions (aPBCx, aPBCy, aPBCz), force matrix constants (α, β, γ), mass (m)
@@ -66,10 +71,10 @@ const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of Au run
-const aurundesc="Au slab-recent-last layer froz"
+aurundesc="Au slab-recent-last layer froz"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-d-DIA-Au move-40ei-xy3-react F Au"
+noaurundesc="NO-Au sc-d-DIA-Au move-40ei-xy3-react F Au"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
@@ -91,8 +96,17 @@ storeEs=DataFrame([name => [] for name in headers])
 # store NO forces from AuN
 FNO_AuN=SVector[]
 
-# NO scattering off of eq Au surface
-runNOAuTrajectory()
+# NO scattering off of eq Au surface. \debug
+for i in eachindex(eis)
+    no.Et_i[1]=eis[i]
+    global xypos=xys[i]
+    ei=Int64(ustrip(u"kJ/mol",no.Et_i[1]))
+    xy=ustrip(u"Å",xypos)
+    global noaurundesc="NO-Au sc-d-DIA-Au move-$(ei)ei-xy$xy-react F Au"
+    # println(noaurundesc)
+    runNOAuTrajectory()
+end
+# runNOAuTrajectory()
 
 ############################################################################################################
 
