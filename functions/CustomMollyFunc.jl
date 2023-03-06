@@ -191,30 +191,33 @@ end
 
 ############################################################################################################
 
-# alter molly PE function above for NO/Au. need to calculate E all at once
+# alter molly PE function above for NO/Au. need to calculate E all at once. doesnt have V_AuAu for speed. plus not in fortran
 function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}}, neighbors=nothing)
     En=0 * s.energy_units
     Ei=0 * s.energy_units
     Ec=0 * s.energy_units
 
     @inbounds for ni in 1:neighbors.n
-        # setup for E calc
         i, j, weight_14 = neighbors.list[ni]
-        dr = vector(s.coords[i], s.coords[j], s.boundary)
-        distbtwn=euclidean(dr,zeros(3)u"Å")
+        # i<3: NOT factoring in V_AuAu.\fix?
+        if i<3
+            # setup for E calc
+            dr = vector(s.coords[i], s.coords[j], s.boundary)
+            distbtwn=euclidean(dr,zeros(3)u"Å")
 
-        Ncoords=s.coords[1]
-        Ocoords=s.coords[2]
-        mN=s.atoms[1].mass
-        mO=s.atoms[2].mass
-        bound=s.boundary
-        cosθ=getcosth(Ncoords,Ocoords,bound)
-        dz=getzcom(mN,mO,Ncoords,Ocoords)
+            Ncoords=s.coords[1]
+            Ocoords=s.coords[2]
+            mN=s.atoms[1].mass
+            mO=s.atoms[2].mass
+            bound=s.boundary
+            cosθ=getcosth(Ncoords,Ocoords,bound)
+            dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-        t_En,t_Ei,t_Ec=getVij_NOAu(i,j,distbtwn,cosθ,dz)
-        En+=t_En
-        Ei+=t_Ei
-        Ec+=t_Ec
+            t_En,t_Ei,t_Ec=getVij_NOAu(i,j,distbtwn,cosθ,dz)
+            En+=t_En
+            Ei+=t_Ei
+            Ec+=t_Ec
+        end
     end
 
     # final ground state energy/eigenvalues
@@ -287,12 +290,11 @@ end
     fdr = force(s, inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary)
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
-    fs[i] -= fdr_ustrip # not adding force to fs[j]: freezes Au atoms
-    # \fix. if j>2, then add force to fs[j]. do once Au is not frozen
-    # # only add for NO interaction
-    # if j==2
-    #     fs[j] += fdr_ustrip
-    # end
+    fs[i] -= fdr_ustrip
+    # reactive force on Au atoms/NO reactive force for (1,2) or (2,1) pairs. need those calculated individually
+    if j>2 && j<auatomcutoff
+        fs[j] += fdr_ustrip
+    end
     return nothing
 end
 

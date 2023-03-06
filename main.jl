@@ -54,7 +54,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor=0.05
+scalefactor=20
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
@@ -69,7 +69,7 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab-recent-last layer froz"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-d-DIA-Au move-100ei-xy3-isaac"
+const noaurundesc="NO-Au sc-d-DIA-Au move-100ei-xy3-react F Au"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
@@ -92,7 +92,7 @@ storeEs=DataFrame([name => [] for name in headers])
 FNO_AuN=SVector[]
 
 # NO scattering off of eq Au surface
-# runNOAuTrajectory()
+runNOAuTrajectory()
 
 ############################################################################################################
 
