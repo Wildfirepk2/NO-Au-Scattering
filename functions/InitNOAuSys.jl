@@ -46,7 +46,8 @@ function initNOCoords()
 	# \debugging
 	zN=12u"Å"+maximum(au.z)
 	zO=zN+r
-	[SA[3u"Å",3u"Å",zN],SA[3u"Å",3u"Å",zO]]
+	xypos=3u"Å"
+	[SA[xypos,xypos,zN],SA[xypos,xypos,zO]]
 end
 
 ############################################################################################################

@@ -69,7 +69,7 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 const aurundesc="Au slab-recent-last layer froz"
 
 ### description of NO/Au run
-const noaurundesc="NO-Au sc-d-DIA-Au move-1000ei-xy3-react F Au"
+const noaurundesc="NO-Au sc-d-DIA-Au move-40ei-xy3-react F Au"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
