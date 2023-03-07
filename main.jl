@@ -5,11 +5,6 @@
 # if running on isaac or not
 isaac=true
 
-# if generating multiple no-au trajectories
-multirun=true
-xypos=25u"Å"
-globalpath="results"
-
 ############################################################################################################
 
 # initialize all functions
@@ -23,6 +18,11 @@ include("functions/CustomMollyFunc.jl")
 include("functions/SimAnalysisFunc.jl")
 
 ############################################################################################################
+
+# if generating multiple no-au trajectories
+multirun=true
+xypos=25u"Å"
+globalpath="results"
 
 # parameter variables (type: DataFrame) from input files
 
