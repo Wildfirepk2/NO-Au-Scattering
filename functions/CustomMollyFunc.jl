@@ -196,28 +196,30 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     En=0 * s.energy_units
     Ei=0 * s.energy_units
     Ec=0 * s.energy_units
+    EAu=0 * s.energy_units
 
     @inbounds for ni in 1:neighbors.n
         i, j, weight_14 = neighbors.list[ni]
         # i<3: NOT factoring in V_AuAu.\fix?
-        if i<3
+        # if i<3
             # setup for E calc
-            dr = vector(s.coords[i], s.coords[j], s.boundary)
+            bound=s.boundary
+            dr = vector(s.coords[i], s.coords[j], bound)
             distbtwn=euclidean(dr,zeros(3)u"Å")
 
             Ncoords=s.coords[1]
             Ocoords=s.coords[2]
             mN=s.atoms[1].mass
             mO=s.atoms[2].mass
-            bound=s.boundary
             cosθ=getcosth(Ncoords,Ocoords,bound)
             dz=getzcom(mN,mO,Ncoords,Ocoords)
 
-            t_En,t_Ei,t_Ec=getVij_NOAu(i,j,distbtwn,cosθ,dz)
+            t_En,t_Ei,t_Ec,t_EAu=getVij_NOAu(i,j,distbtwn,cosθ,dz,dr,bound)
             En+=t_En
             Ei+=t_Ei
             Ec+=t_Ec
-        end
+            EAu+=t_EAu
+        # end
     end
 
     # final ground state energy/eigenvalues
@@ -230,20 +232,21 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
 
     # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active
-        return uconvert(s.energy_units, Eg)
+        return uconvert(s.energy_units, Eg+EAu)
     elseif ionic_PES_active
-        return uconvert(s.energy_units, Ei)
+        return uconvert(s.energy_units, Ei+EAu)
     else
-        return uconvert(s.energy_units, En)
+        return uconvert(s.energy_units, En+EAu)
     end
 end
 
 ############################################################################################################
 
-function getVij_NOAu(i,j,distbtwn,cosθ,dz)
+function getVij_NOAu(i,j,distbtwn,cosθ,dz,dr,boundary)
     En=0u"e_MD"
     Ei=0u"e_MD"
     Ec=0u"e_MD"
+    EAu=0u"e_MD"
     if i==1
         # NO interaction + 1 time V_image, WF, Ea calc
         if j==2
@@ -265,7 +268,7 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 Ec=V01_AuN(distbtwn)
             end
         end
-    else
+    elseif i==2
         # O-Au interactions. NOT double counting the NO interaction (j==1)
         if j>1
             if neutral_PES_active
@@ -278,8 +281,21 @@ function getVij_NOAu(i,j,distbtwn,cosθ,dz)
                 Ec=V01_AuO(distbtwn)
             end
         end
+    else
+        # Au-Au interactions
+        it=i-2
+        jt=j-2
+
+        # find j in nn[i] and return index. needed to access items in variables based off nn
+        idx_j=findfirst(isequal(jt), nn[it])
+
+        # dist of nn pair away from equilibrium. static array
+        rij=vector(r0ij[it][:,idx_j],dr,boundary)
+
+        # V nn pair exerts on atom i. number. divide by 2 because of v definition
+        EAu=dot(rij,Aijarray[it][idx_j],rij)/2
     end
-    return En,Ei,Ec
+    return En,Ei,Ec,EAu
 end
 
 ############################################################################################################
@@ -416,7 +432,7 @@ function getFij_NOAu(i,j,vec_ij,distbtwn,rNO,uON,u,cosθ,dz,a,b,c,boundary)
         idx_j=findfirst(isequal(jt), nn[it])
 
         # no forces on atoms in last layer
-        if it<auatomcutoff
+        if i<auatomcutoff # need ref to original i since auatomcutoff=399
             # normal operation
 
             # dist of nn pair away from equilibrium. static array

@@ -186,7 +186,7 @@ end
 """
 output atom coords at ith logging point to excel file. default path is current directory. used only in outputallsyscoords but can be called independently
 """
-function outputsyscoords(sys,dt,i,path=".")
+function outputsyscoords(sys,dt,i,path=".",asexcel=true)
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -198,10 +198,17 @@ function outputsyscoords(sys,dt,i,path=".")
     ys=ustrip([datasrc[j][2] for j in eachindex(datasrc)] .|> u"d_MD")
     zs=ustrip([datasrc[j][3] for j in eachindex(datasrc)] .|> u"d_MD")
 
-    # write to xlsx
-    data=DataFrame(x=xs,y=ys,z=zs)
-    file="$path/syscoords.xlsx"
-    write_xlsx(file,dt,i,stepslog,data)
+    if asexcel
+        # write to excel
+        data=DataFrame(x=xs,y=ys,z=zs)
+        file="$path/syscoords.xlsx"
+        write_xlsx(file,dt,i,stepslog,data)
+    else
+        # write to csv
+        data=DataFrame(x=xs,y=ys,z=zs)
+        file="$path/syscoords $i.csv"
+        CSV.write(file,data)
+    end
 end
 
 ############################################################################################################
@@ -211,18 +218,33 @@ output atom coords w time to excel file at path. default path is current directo
 
 firstlastonly for speed. XLSX slow.
 """
-function outputallsyscoords(sys,dt,path=".",firstlastonly=true)
+function outputallsyscoords(sys,dt,path=".",asexcel=true,firstlastonly=true)
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history
 
     if firstlastonly
-        # write excel file for first/last time step only.
-        outputsyscoords(sys,dt,1,path)
-        outputsyscoords(sys,dt,length(datasrc),path)
+        if asexcel
+            # write excel file for first/last time step only.
+            outputsyscoords(sys,dt,1,path)
+            outputsyscoords(sys,dt,length(datasrc),path)
+        else
+            coordpath=mkpath("$path/syscoords")
+            # write csv file for first/last time step only.
+            outputsyscoords(sys,dt,1,coordpath,false)
+            outputsyscoords(sys,dt,length(datasrc),coordpath,false)
+        end
     else
-        # write excel file for ea time step
-        for i in eachindex(datasrc)
-            outputsyscoords(sys,dt,i,path)
+        if asexcel
+            # write excel file for ea time step
+            for i in eachindex(datasrc)
+                outputsyscoords(sys,dt,i,path)
+            end
+        else
+            coordpath=mkpath("$path/syscoords")
+            # write csv file for ea time step
+            for i in eachindex(datasrc)
+                outputsyscoords(sys,dt,i,coordpath,false)
+            end
         end
     end
 end
@@ -420,6 +442,10 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     ttotal=simsteps*dt
     ttotalmd=round(u"t_MD",ttotal;digits=2)
 
+    # mult runs
+    ei=no.Et_i[1]
+    eimd=round(u"e_MD",ei;digits=2)
+
     # number of steps between logging points for quantities
     stepsbtwnlogsCoords=sys.loggers.coords.n_steps
     stepsbtwnlogsE=sys.loggers.et.n_steps
@@ -452,6 +478,11 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Total time: $ttotal ($ttotalmd)")
         println(io,"Simulation runtime: $runtime")
         println(io,"Ran on ISAAC: $isaac")
+        println(io)
+        println(io,"Multiple runs")
+        # print T \fix
+        println(io,"    Incident energy of molecule: $ei ($eimd)")
+        println(io,"    Initial x/y position of molecule: $xypos")
         println(io)
         if desc==noaurundesc
             println(io,"PESs:")
@@ -492,7 +523,6 @@ function outputanimation(sys,path=".")
         else
             visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
         end
-        # visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
     elseif inter_type==NOAuInteraction
         # connecting N and O atoms with purple line
         connections=[(1,2)]
@@ -509,7 +539,6 @@ function outputanimation(sys,path=".")
         else
             visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
         end
-        # visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
     end
 end
 
@@ -525,9 +554,11 @@ function outputsysinfo(sys,dt,systype,path=".")
     outputanimation(sys,path)
 
     # output quantities to excel file in separate folder
-    outputallsyscoords(sys,dt,path)
     if systype==noaurundesc
+        outputallsyscoords(sys,dt,path,false,false)
         outputallatomizcoords(sys,dt,1,path)
+    else
+        outputallsyscoords(sys,dt,path)
     end
     outputsysE(sys,dt,systype,path)
     outputallsysforces(sys,dt,path)
@@ -539,12 +570,12 @@ end
 """
 run MD on a system and output run info to results folder
 """
-function runMDprintresults(sys,desc,simulator,steps)
+function runMDprintresults(sys,desc,simulator,steps,path=".")
     # time of run
     date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
     
     # make folder to store results of current run
-    path=mkpath("results/$desc-$steps--$date")
+    resultpath=mkpath("$path/$desc-$steps--$date")
 
     # time step in simulation
     dt=simulator.dt
@@ -554,8 +585,8 @@ function runMDprintresults(sys,desc,simulator,steps)
     runtime*=u"s"
 
     # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,dt,desc,path)
+    outputsysinfo(sys,dt,desc,resultpath)
 
     # output summary of run
-    outputsummary(sys,dt,desc,steps,runtime,path)
+    outputsummary(sys,dt,desc,steps,runtime,resultpath)
 end

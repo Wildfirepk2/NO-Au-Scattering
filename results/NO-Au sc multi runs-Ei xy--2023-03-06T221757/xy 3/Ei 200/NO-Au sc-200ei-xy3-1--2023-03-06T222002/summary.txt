@@ -1,0 +1,32 @@
+NO/Au(111) Scattering
+
+Time of run: 2023-03-06 22:20:07
+Number of atoms: 530
+Number of steps: 1
+Time step: 1.0 fs (0.1 t_MD)
+Total time: 1.0 fs (0.1 t_MD)
+Simulation runtime: 0.114441461 s
+Ran on ISAAC: false
+
+Multiple runs
+    Incident energy of molecule: 200 kJ mol⁻¹ (2.0 e_MD)
+    Initial x/y position of molecule: 3 Å
+
+PESs:
+    neutral_PES_active = true
+    ionic_PES_active = true
+    coupled_PES_active = true
+
+Steps between logging quantities
+    Coords: 1
+    Energies: 1
+    Forces: 1
+    Velocities: 1
+
+Time period between logging quantities
+    Coords: 1.0 fs (0.1 t_MD)
+    Energies: 1.0 fs (0.1 t_MD)
+    Forces: 1.0 fs (0.1 t_MD)
+    Velocities: 1.0 fs (0.1 t_MD)
+
+Final System Total Energy: 1616.3775063627177 kJ mol⁻¹ (16.16 e_MD)

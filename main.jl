@@ -5,6 +5,11 @@
 # if running on isaac or not
 isaac=true
 
+# if generating multiple no-au trajectories
+multirun=true
+xypos=25u"Å"
+globalpath="results"
+
 ############################################################################################################
 
 # initialize all functions
@@ -18,11 +23,6 @@ include("functions/CustomMollyFunc.jl")
 include("functions/SimAnalysisFunc.jl")
 
 ############################################################################################################
-
-# \debug
-eis=[100,1000,40,40]u"kJ/mol"
-xys=[3,3,25,3]u"Å"
-xypos=0u"Å"
 
 # parameter variables (type: DataFrame) from input files
 
@@ -59,7 +59,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor=2
+scalefactor=20
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
@@ -74,7 +74,9 @@ const actsteplog = steps_eq<=100 ? 1 : stepslogging
 aurundesc="Au slab-recent-last layer froz"
 
 ### description of NO/Au run
-noaurundesc="NO-Au sc-d-DIA-Au move-40ei-xy3-react F Au"
+noaurundesc="NO-Au sc-d-DIA-Au move-100ei-xy25-react F Au-VAu"
+
+multirundesc="NO-Au sc multi runs-Ei xy"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
@@ -97,16 +99,31 @@ storeEs=DataFrame([name => [] for name in headers])
 FNO_AuN=SVector[]
 
 # NO scattering off of eq Au surface. \debug
-for i in eachindex(eis)
-    no.Et_i[1]=eis[i]
-    global xypos=xys[i]
-    ei=Int64(ustrip(u"kJ/mol",no.Et_i[1]))
-    xy=ustrip(u"Å",xypos)
-    global noaurundesc="NO-Au sc-d-DIA-Au move-$(ei)ei-xy$xy-react F Au"
-    # println(noaurundesc)
+if multirun
+    ts=(300:50:500)u"K"
+    xys=(1:2:25)u"Å"
+    eis=(20:20:200)u"kJ/mol"
+    # \fix. add T
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    outpath=mkpath("$globalpath/$multirundesc--$date")
+    for j in eachindex(xys)
+        global xypos=xys[j]
+        xy=ustrip(u"Å",xypos)
+        xypath=mkpath("$outpath/xy $xy")
+
+        for k in eachindex(eis)
+            no.Et_i[1]=eis[k]
+            ei=Int64(ustrip(u"kJ/mol",no.Et_i[1]))
+            eipath=mkpath("$xypath/Ei $ei")
+            global globalpath="$eipath"
+            global noaurundesc="NO-Au sc-$(ei)ei-xy$xy"
+
+            runNOAuTrajectory()
+        end
+    end
+else
     runNOAuTrajectory()
 end
-# runNOAuTrajectory()
 
 ############################################################################################################
 

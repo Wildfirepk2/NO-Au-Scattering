@@ -80,4 +80,4 @@ sys_NOAu = System(
 )
 
 # running MD + output results
-runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
+runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, globalpath)

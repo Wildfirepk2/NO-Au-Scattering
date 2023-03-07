@@ -74,4 +74,4 @@ sys_Au = System(
 )
 
 # running MD + output results
-runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq)
+runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq, globalpath)
