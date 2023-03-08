@@ -3,7 +3,7 @@
 ############################################################################################################
 
 # if running on isaac or not
-isaac=true
+isaac=false
 
 ############################################################################################################
 
@@ -14,13 +14,14 @@ include("functions/InitSimParams.jl")
 include("functions/NOAuFVFunc.jl")
 include("functions/InitAuSys.jl")
 include("functions/InitNOAuSys.jl")
+include("functions/SupportMollyFunc.jl")
 include("functions/CustomMollyFunc.jl")
 include("functions/SimAnalysisFunc.jl")
 
 ############################################################################################################
 
 # if generating multiple no-au trajectories
-multirun=true
+multirun=false
 xypos=25u"Å"
 globalpath="results"
 
@@ -59,7 +60,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=5000 -> 1 step
 # no/au: f=1e5 -> 1 step
-scalefactor=20
+scalefactor=1e5
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
