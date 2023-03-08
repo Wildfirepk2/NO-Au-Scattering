@@ -7,12 +7,21 @@ get equilibrated au coords from previous run
 """
 function getEquilAuCoords()
     audir=getAuDirPath("results")
-    coordsfile="$audir/syscoords.xlsx"
-    xfcoord=XLSX.readxlsx(coordsfile)
-    sheets=XLSX.sheetnames(xfcoord)
-    sheetlastcoord=sheets[end]
-    dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
-    [SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
+	readaudir=readdir(audir)
+	i_coords=findfirst(contains.(readaudir,"syscoords"))
+	if i_coords isa Nothing
+		coordsfile="$audir/syscoords.xlsx"
+		xfcoord=XLSX.readxlsx(coordsfile)
+		sheets=XLSX.sheetnames(xfcoord)
+		sheetlastcoord=sheets[end]
+		dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
+		[SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
+	else
+		readcoorddir=readdir("$audir/syscoords")
+		lastcoords=readcoorddir[end]
+		dfcoord=CSV.read("$audir/syscoords/$lastcoords",DataFrame)
+		[SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
+	end
 end
 
 ############################################################################################################

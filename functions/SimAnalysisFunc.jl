@@ -349,7 +349,7 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Ran on ISAAC: $isaac")
         println(io)
         println(io,"Multiple runs")
-        # print T \fix
+        println(io,"    T: $(param.T[1])")
         println(io,"    Incident energy of molecule: $ei ($eimd)")
         println(io,"    Initial x/y position of molecule: $xypos")
         println(io)
@@ -423,11 +423,13 @@ function outputsysinfo(sys,dt,systype,path=".")
     outputanimation(sys,path)
 
     # output quantities to excel file in separate folder
-    if systype==noaurundesc
+    if isaac
         outputallsyscoords(sys,dt,path,false,false)
-        outputallatomizcoords(sys,dt,1,path)
     else
         outputallsyscoords(sys,dt,path)
+    end
+    if systype==noaurundesc
+        outputallatomizcoords(sys,dt,1,path)
     end
     outputsysE(sys,dt,systype,path)
     outputallsysforces(sys,dt,path)
@@ -458,4 +460,45 @@ function runMDprintresults(sys,desc,simulator,steps,path=".")
 
     # output summary of run
     outputsummary(sys,dt,desc,steps,runtime,resultpath)
+end
+
+############################################################################################################
+
+function checkscattering(s::System)
+    cutoff=10u"Å"
+    finalzN=s.loggers.coords.history[end][1][3]
+
+    if finalzN>=cutoff
+        true
+    else
+        false
+    end
+end
+
+############################################################################################################
+
+"""
+print txt file with summary of the multiple runs.
+"""
+function outputmultirunsummary(runpath=".")
+    file="$runpath/summary.txt"
+    open(file,"w") do io
+        println(io,"Summary of multiple runs")
+        println(io)
+        println(io,"Variables varied: $vary")
+        println(io,"Ran on ISAAC: $isaac")
+        println(io)
+        println(io,"Number of trajectories scattered: $nscatter")
+        println(io,"Number of trajectories trapped: $ntrap")
+        println(io)
+        println(io,"Scattered trajectories")
+        for i in eachindex(trajscatter)
+            println(io,"    $(trajscatter[i])")
+        end
+        println(io)
+        println(io,"Trapped trajectories")
+        for i in eachindex(trajtrap)
+            println(io,"    $(trajtrap[i])")
+        end
+    end
 end
