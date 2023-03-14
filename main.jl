@@ -106,9 +106,9 @@ FNO_AuN=SVector[]
 
 # NO scattering off of eq Au surface. \debug
 if multirun
-    ts=(300:50:500)u"K"
-    xys=(1:2:25)u"Å"
-    eis=(20:20:200)u"kJ/mol"
+    ts=(300:50:300)u"K"
+    xys=(3:2:21)u"Å"
+    eis=(25:25:100)u"kJ/mol"
 
     # # debug vals
     # ts=(300:50:350)u"K"
