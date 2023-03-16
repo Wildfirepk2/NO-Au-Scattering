@@ -441,6 +441,15 @@ end
 ############################################################################################################
 
 """
+helper function: center of mass
+"""
+function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1::Unitful.Velocity, r2::Unitful.Velocity)
+    (m1*r1 + m2*r2) / (m1 + m2)
+end
+
+############################################################################################################
+
+"""
 helper function: get zcom, the perpendicular distance of the center of mass of the NO molecule from the surface plane (z≈7.2Å)
 """
 function getzcom(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)

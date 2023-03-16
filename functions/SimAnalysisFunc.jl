@@ -315,6 +315,9 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     ei=no.Et_i[1]
     eimd=round(u"e_MD",ei;digits=2)
 
+    # xy position of N
+    Npos=sys.loggers.coords.history[1][1][1] |> u"Å"
+
     # number of steps between logging points for quantities
     stepsbtwnlogsCoords=sys.loggers.coords.n_steps
     stepsbtwnlogsE=sys.loggers.et.n_steps
@@ -348,10 +351,9 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Simulation runtime: $runtime")
         println(io,"Ran on ISAAC: $isaac")
         println(io)
-        println(io,"Multiple runs")
-        println(io,"    T: $(param.T[1])")
-        println(io,"    Incident energy of molecule: $ei ($eimd)")
-        println(io,"    Initial x/y position of molecule: $xypos")
+        println(io,"T: $(param.T[1])")
+        println(io,"Incident energy of molecule: $ei ($eimd)")
+        println(io,"Initial x/y position of molecule: $Npos")
         println(io)
         if desc==noaurundesc
             println(io,"PESs:")
@@ -418,10 +420,7 @@ output all system info. animation. logger quantities
 
 run description needs to contain either "Au slab" or "NO/Au"
 """
-function outputsysinfo(sys,dt,systype,path=".")
-    # output animation of simulation in $path
-    outputanimation(sys,path)
-
+function outputsysinfo(sys,dt,systype,path=".",simplerun=false)
     # output quantities to excel file in separate folder
     if isaac
         outputallsyscoords(sys,dt,path,false,false)
@@ -431,9 +430,15 @@ function outputsysinfo(sys,dt,systype,path=".")
     if systype==noaurundesc
         outputallatomizcoords(sys,dt,1,path)
     end
-    outputsysE(sys,dt,systype,path)
-    outputallsysforces(sys,dt,path)
-    outputallsysvelocities(sys,dt,path)
+
+    if !simplerun
+        # output animation of simulation in $path
+        outputanimation(sys,path)
+
+        outputsysE(sys,dt,systype,path)
+        outputallsysforces(sys,dt,path)
+        outputallsysvelocities(sys,dt,path)
+    end
 end
 
 ############################################################################################################
@@ -441,12 +446,12 @@ end
 """
 run MD on a system and output run info to results folder
 """
-function runMDprintresults(sys,desc,simulator,steps,path=".")
+function runMDprintresults(sys,desc,simulator,steps)
     # time of run
     date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
     
     # make folder to store results of current run
-    resultpath=mkpath("$path/$desc-$steps--$date")
+    resultpath=mkpath("results/$desc-$steps--$date")
 
     # time step in simulation
     dt=simulator.dt
@@ -456,7 +461,7 @@ function runMDprintresults(sys,desc,simulator,steps,path=".")
     runtime*=u"s"
 
     # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,dt,desc,resultpath)
+    outputsysinfo(sys,dt,desc,resultpath,multirun)
 
     # output summary of run
     outputsummary(sys,dt,desc,steps,runtime,resultpath)
@@ -464,8 +469,28 @@ end
 
 ############################################################################################################
 
+"""
+run MD on a system and output run info to specified folder
+"""
+function runMDprintresults(sys,desc,simulator,steps,path)
+    # time step in simulation
+    dt=simulator.dt
+
+    # run MD+give run time
+    runtime=@elapsed simulate!(sys, simulator, steps)
+    runtime*=u"s"
+
+    # output all system data: animation, coords, last velocities/forces
+    outputsysinfo(sys,dt,desc,path,multirun)
+
+    # output summary of run
+    outputsummary(sys,dt,desc,steps,runtime,path)
+end
+
+############################################################################################################
+
 function checkscattering(s::System)
-    cutoff=10u"Å"
+    cutoff=10u"Å"+maximum(au.z)
     finalzN=s.loggers.coords.history[end][1][3]
 
     if finalzN>=cutoff
@@ -477,10 +502,57 @@ end
 
 ############################################################################################################
 
+function checkEconserved(s::System)
+    initialE=s.loggers.et.history[1]
+    finalE=s.loggers.et.history[end]
+    percentdif=abs(initialE-finalE)/initialE
+
+    if percentdif<0.01
+        true
+    else
+        false
+    end
+end
+
+############################################################################################################
+
+"""
+get final NO coords/vel + energies. output as vec in MD units
+"""
+function finalE_NO(s::System)
+    mN=s.atoms[1].mass
+    mO=s.atoms[2].mass
+    mt=mN+mO
+    μNO=mN*mO/mt
+
+    finalrN=s.loggers.coords.history[end][1] .|> u"d_MD"
+    finalrO=s.loggers.coords.history[end][2] .|> u"d_MD"
+    rvec_NO=vector(finalrN,finalrO,s.boundary)
+    ur_NO=normalize(rvec_NO)
+
+    finalvN=s.loggers.velocities.history[end][1] .|> u"v_MD"
+    finalvO=s.loggers.velocities.history[end][2] .|> u"v_MD"
+    vvec_NO=finalvO-finalvN
+
+    vcom_sq=sum([getCOM(mN,mO,finalvN[i],finalvO[i])^2 for i in eachindex(finalvN)])
+    finalEtrans=0.5*mt*vcom_sq*N_A |> u"e_MD"
+
+    vvib_sq=dot(ur_NO,vvec_NO)^2
+    finalKEvib=0.5*μNO*vvib_sq*N_A |> u"e_MD"
+
+    finalKEtot=0.5*sum(mN.*finalvN.^2+mO.*finalvO.^2)*N_A |> u"e_MD"
+    finalErot=finalKEtot-finalEtrans-finalKEvib
+
+    Evec=[finalKEtot,finalEtrans,finalErot,finalKEvib]
+    ustrip_vec(vcat(finalrN,finalrO,finalvN,finalvO,Evec))
+end
+
+############################################################################################################
+
 """
 print txt file with summary of the multiple runs.
 """
-function outputmultirunsummary(runpath=".")
+function outputmultirunsummary(vary,counttraj,runpath=".")
     file="$runpath/summary.txt"
     open(file,"w") do io
         println(io,"Summary of multiple runs")
@@ -488,17 +560,18 @@ function outputmultirunsummary(runpath=".")
         println(io,"Variables varied: $vary")
         println(io,"Ran on ISAAC: $isaac")
         println(io)
-        println(io,"Number of trajectories scattered: $nscatter")
-        println(io,"Number of trajectories trapped: $ntrap")
-        println(io)
-        println(io,"Scattered trajectories")
-        for i in eachindex(trajscatter)
-            println(io,"    $(trajscatter[i])")
-        end
-        println(io)
-        println(io,"Trapped trajectories")
-        for i in eachindex(trajtrap)
-            println(io,"    $(trajtrap[i])")
-        end
+        println(io,counttraj)
     end
+end
+
+############################################################################################################
+
+"""
+print txt file with summary of the multiple runs.
+"""
+function outputtrajinfo(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
+    name_sc="$runpath/traj_scattered.xlsx"
+    name_tr="$runpath/traj_trapped.xlsx"
+    write_xlsx(name_sc,trajscatter)
+    write_xlsx(name_tr,trajtrap)
 end
