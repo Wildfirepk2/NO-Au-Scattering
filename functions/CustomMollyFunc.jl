@@ -12,7 +12,7 @@ end
 # mostly a copy of molly force! (level above force). needed to calculate force correctly for my system
 @inline @inbounds function Molly.force!(fs, inter::AuSlabInteraction, s::System, i::Integer, j::Integer, force_units, weight_14::Bool=false)
     dr = vector(s.coords[i], s.coords[j], s.boundary)
-    fdr = force(inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary, weight_14)
+    fdr = force(s, inter, dr, s.coords[i], s.coords[j], s.atoms[i], s.atoms[j], s.boundary)
     Molly.check_force_units(fdr, force_units)
     fdr_ustrip = ustrip.(fdr)
     fs[i] -= fdr_ustrip # negative force just works. investigate later
@@ -28,7 +28,8 @@ end
 # force function for Au slab equilibration. calculating F for each atom due to NN. 
 # inline/inbounds: copied from Lennard Jones force function. may also consider @fastmath
 # see roy art, p7, eq 20. see fortran GetFNN2
-@inline @inbounds function Molly.force(inter::AuSlabInteraction,
+@inline @inbounds function Molly.force(s::System,
+                        inter::AuSlabInteraction,
                         vec_ij,
                         coord_i,
                         coord_j,
@@ -43,7 +44,7 @@ end
     idx_j=findfirst(isequal(j), nn[i])
 
     # fetch system's force units. needed for Molly compatibility. may change later
-    sysunits=sys_Au.force_units
+    sysunits=s.force_units
 
     # no forces on atoms in last layer
     if i<auatomcutoff
