@@ -515,7 +515,11 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
    runtime*=u"s"
 
    # output all system data: animation, coords, last velocities/forces
-   outputsysinfo(sys,dt,desc,path,multirun)
+   if desc==aurundesc
+        outputsysinfo(sys,dt,desc,path)
+   else
+        outputsysinfo(sys,dt,desc,path,multirun)
+   end
 
    # output summary of run
    outputsummary(sys,dt,desc,steps,runtime,path)
@@ -609,13 +613,15 @@ end
 """
 print txt file with summary of the multiple runs.
 """
-function outputmultirunsummary(vary,counttraj,runpath=".")
+function outputmultirunsummary(vary,counttraj::DataFrame,runpath=".")
     file="$runpath/summary.txt"
     open(file,"w") do io
         println(io,"Summary of multiple runs")
         println(io)
         println(io,"Variables varied: $vary")
         println(io,"Ran on ISAAC: $isaac")
+        println(io,"Random Trajectories?: $randomtraj")
+        println(io,"Debugging?: $debug")
         println(io)
         println(io,counttraj)
     end

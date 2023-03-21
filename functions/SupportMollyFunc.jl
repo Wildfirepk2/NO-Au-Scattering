@@ -2,7 +2,7 @@
 
 ############################################################################################################
 
-function getVij_NOAu(i,j,distbtwn,cosθ,dz,dr,boundary)
+@inline @inbounds function getVij_NOAu(i,j,distbtwn,cosθ,dz,dr,boundary)
     En=0u"e_MD"
     Ei=0u"e_MD"
     Ec=0u"e_MD"
@@ -60,7 +60,7 @@ end
 
 ############################################################################################################
 
-function getFij_NOAu(i,j,vec_ij,distbtwn,rNO,uON,u,cosθ,dz,a,b,c,boundary)
+@inline @inbounds function getFij_NOAu(i,j,vec_ij,distbtwn,rNO,uON,u,cosθ,dz,a,b,c,boundary)
     Fn=0u"N/mol"
     Fi=0u"N/mol"
     Fc=0u"N/mol"

@@ -11,6 +11,9 @@ const multirun=true
 # if running random trajectories (changes initial NO pos)
 const randomtraj=true
 
+### description of NO/Au run
+const noaurundesc="NO-Au_sc_E25"
+
 # if debugging
 const debug=false
 
@@ -76,10 +79,7 @@ const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of Au run \fix const
-const aurundesc="Au_slab"
-
-### description of NO/Au run
-const noaurundesc="NO-Au_sc"
+aurundesc="Au_slab"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
@@ -88,12 +88,7 @@ const coupled_PES_active=true
 
 ############################################################################################################
 
-# check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
-runAuSlabEquilibration()
-
-############################################################################################################
-
-# NO/Au scattering (MD with velocity verlet)
+# main variables
 
 # store eigenvalues for f func
 headers = ["Eg", "λ1", "λ2"]
@@ -103,7 +98,7 @@ storeEs=DataFrame([name => [] for name in headers])
 # store NO forces from AuN
 FNO_AuN=SVector[]
 
-# first Au atom of last layer. last layer (atoms 397-528) is frozen. may put in au var
+# first Au atom of last layer. last layer (atoms 399-530) is frozen. redefined as 397 for Au eq (since theres no N,O) and turned back to 399 after
 auatomcutoff=399
 
 # 3 x N matrix. xyz coords of each Au atom stored in columns
@@ -126,7 +121,10 @@ Aij=initAij()
 # array of arrays of matrices. force matrix for nearest neighbors for each atom. 
 Aijarray=initAijarray()
 
-# NO scattering off of eq Au surface. \debug
+############################################################################################################
+
+# NO/Au scattering (MD with velocity verlet)
+
 if multirun
     if debug
         ts=(300:50:350)u"K"
@@ -159,13 +157,13 @@ if multirun
     h2=["T", "Ei", "n_scatter", "n_trap", "frac_scatter", "frac_trap"]
     counttraj=DataFrame([name => [] for name in h2])
 
-    desc = isaac ? "NO-Au_sc_multi_runs-ISAAC" : "NO-Au_sc_multi_runs"
+    desc = isaac ? "$(noaurundesc)_multi_runs-ISAAC" : "$(noaurundesc)_multi_runs"
     outpath=makeresultsfolder(desc,vary)
 
     for i in eachindex(ts)
         param.T[1]=ts[i]
         T=Int64(ustrip(u"K",param.T[1]))
-        global aurundesc="Au slab-T $T"
+        global aurundesc="Au_slab-T $T"
         runAuSlabEquilibration()
         tpath=mkpath("$outpath/T $T")
 
@@ -211,6 +209,9 @@ if multirun
     outputmultirunsummary(vary,counttraj,outpath)
     outputtrajinfo(trajscatter,trajtrap,outpath)
 else
+    # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
+    runAuSlabEquilibration()
+
     if randomtraj
         xNOi=au.aPBCx[1]*rand()
         yNOi=au.aPBCy[1]*rand()
