@@ -2,10 +2,10 @@
 
 # system of units
 # mass = g/mol = amu
-# distance = Angstrom = 10^(-10) m
-# time = 10 femtoseconds = 10^(-14) s
+# distance = 1 Å = 10^(-10) m
+# time = 10 fs = 10^(-14) s
 # frequency = 10^(14) s^(-1) = 100 THz
-# velocity = Angstrom/(10 femtoseconds) = 10^4 m/s
+# velocity = 1 Å/(10 fs) = 10^4 m/s
 # energy = 100 kJ/mol
 
 ###########################################################################################

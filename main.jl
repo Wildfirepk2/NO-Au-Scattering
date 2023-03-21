@@ -3,15 +3,16 @@
 ############################################################################################################
 
 # if running on isaac or not
-isaac=true
+const isaac=true
 
 # if generating multiple no-au trajectories
-multirun=true
+const multirun=true
 
-### scale down factor on steps for debugging. f=1 -> no scaling.
-# au: f=500 -> 1 step
-# no/au: f=1e4 -> 1 step
-scalefactor=1 #\fix to 1
+# if running random trajectories (changes initial NO pos)
+const randomtraj=true
+
+# if debugging
+const debug=false
 
 ############################################################################################################
 
@@ -60,6 +61,11 @@ virtboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
+### scale down factor on steps for debugging. f=1 -> no scaling.
+# au: f=500 -> 1 step
+# no/au: f=1e4 -> 1 step
+scalefactor = debug ? 1e4 : 1
+
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
 
@@ -69,11 +75,11 @@ const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
-### description of Au run
-aurundesc="Au_slab"
+### description of Au run \fix const
+const aurundesc="Au_slab"
 
 ### description of NO/Au run
-noaurundesc="NO-Au_sc"
+const noaurundesc="NO-Au_sc"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true
@@ -122,25 +128,39 @@ Aijarray=initAijarray()
 
 # NO scattering off of eq Au surface. \debug
 if multirun
-    ts=(300:50:300)u"K"
-    xys=(3:2:21)u"Å"
-    eis=(25:25:100)u"kJ/mol"
-
-    # # \debug vals
-    # ts=(300:50:350)u"K"
-    # eis=(20:20:40)u"kJ/mol"
-    # xys=(1:2:3)u"Å"
+    if debug
+        ts=(300:50:350)u"K"
+        eis=(20:20:40)u"kJ/mol"
+        if randomtraj
+            ntraj=2
+            xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(ntraj)]
+            ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(ntraj)]
+        else
+            xs=(1:2:3)u"Å"
+            ys=xs
+        end
+    else
+        ts=(300:50:300)u"K"
+        eis=(25:25:25)u"kJ/mol"
+        if randomtraj
+            ntraj=200
+            xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(ntraj)]
+            ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(ntraj)]
+        else
+            xs=(3:2:21)u"Å"
+            ys=xs
+        end
+    end
 
     vary="T_Ei_xy"
-    h=["T", "Ei", "xypos", "xNf", "yNf", "zNf", "xOf", "yOf", "zOf", "vxNf", "vyNf", "vzNf", "vxOf", "vyOf", "vzOf", "KEtot", "Etrans", "Erot", "KEvib"]
+    h=["T", "Ei", "xNOi", "yNOi", "xNf", "yNf", "zNf", "xOf", "yOf", "zOf", "vxNf", "vyNf", "vzNf", "vxOf", "vyOf", "vzOf", "KEtot", "Etrans", "Erot", "KEvib"]
     trajtrap=DataFrame([name => [] for name in h])
     trajscatter=DataFrame([name => [] for name in h])
     h2=["T", "Ei", "n_scatter", "n_trap", "frac_scatter", "frac_trap"]
     counttraj=DataFrame([name => [] for name in h2])
 
-    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
     desc = isaac ? "NO-Au_sc_multi_runs-ISAAC" : "NO-Au_sc_multi_runs"
-    outpath=mkpath("results/$desc-$vary--$date")
+    outpath=makeresultsfolder(desc,vary)
 
     for i in eachindex(ts)
         param.T[1]=ts[i]
@@ -156,18 +176,20 @@ if multirun
 
             nscatter=0
             ntrap=0
-            for k in eachindex(xys)
-                xypos=xys[k]
-                xy=ustrip(u"Å",xypos)
-                xypath=mkpath("$eipath/xy $xy")
+            for k in eachindex(xs)
+                xNOi=xs[k]
+                x=round(ustrip(u"Å",xNOi);digits=3)
+                yNOi=ys[k]
+                y=round(ustrip(u"Å",yNOi);digits=3)
+                xypath=makeresultsfolder("$eipath/x $x y $y")
 
-                sys=runNOAuTrajectory(xypath,xypos)
+                sys=runNOAuTrajectory(xNOi,yNOi,xypath)
                 if !checkEconserved(sys)
                     error("Energy not conserved")
                 end
 
                 finalNOinfo=finalE_NO(sys)
-                allinfo=vcat([T, ei, xy], finalNOinfo)
+                allinfo=vcat([T, ei, x, y], finalNOinfo)
                 if checkscattering(sys)
                     nscatter+=1
                     push!(trajscatter, allinfo)
@@ -184,11 +206,19 @@ if multirun
         end
     end
 
+    # zip all folders
+    zipfolders(outpath)
     outputmultirunsummary(vary,counttraj,outpath)
     outputtrajinfo(trajscatter,trajtrap,outpath)
 else
-    xypos=25u"Å"
-    sys=runNOAuTrajectory(xypos)
+    if randomtraj
+        xNOi=au.aPBCx[1]*rand()
+        yNOi=au.aPBCy[1]*rand()
+    else
+        xNOi=25u"Å"
+        yNOi=xNOi
+    end
+    sys=runNOAuTrajectory(xNOi,yNOi)
 end
 
 ############################################################################################################

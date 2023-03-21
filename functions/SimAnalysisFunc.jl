@@ -123,7 +123,7 @@ end
 """
 output atom i z coords w time to excel file + make graph
 """
-function outputallatomizcoords(sys,dt,atom_i,path=".")
+function outputallatomizcoords(sys,dt,atom_i::Int64,path=".")
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -148,12 +148,48 @@ function outputallatomizcoords(sys,dt,atom_i,path=".")
     outputgraph(graphdesc,data,path)
 end
 
+"""
+output atom z coords (atoms #'s specified by vec) w time to excel file + make graph
+"""
+function outputallatomizcoords(sys,dt,atomrange,path=".")
+    # logging interval. ie log coords after every $stepslog steps
+    stepslog=sys.loggers.coords.n_steps
+
+    # number of logs
+    nsteps=length(sys.loggers.coords.history)
+
+    # time between logs
+    dtlog=stepslog*dt
+
+    # tmp vars for time/coords + converted to MD units
+    z_surf=maximum(au.z)
+    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+    
+    dfheader=["t"]
+    dfdata=Vector[time]
+    
+    for atom_i in atomrange
+        push!(dfheader,"z$atom_i")
+        zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
+        push!(dfdata,zcoords)
+    end
+    
+    # write to excel file at $path
+    data=DataFrame(Dict(zip(dfheader,dfdata)))
+    file="$path/z-z_surf v time.xlsx"
+    write_xlsx(file,data)
+    
+    # make zcoord vs time graph
+    graphdesc = "Atom Height Above Surface with Time"
+    outputgraph(graphdesc,data,path)
+end
+
 ############################################################################################################
 
 """
 output graph given DataFrame. called in outputsysE
 """
-function outputgraph(desc,df,path=".")
+function outputgraph(desc,df::DataFrame,path=".")
     # grabbing key data from df
     colnames=names(df)
     numcols=ncol(df)
@@ -316,23 +352,31 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     eimd=round(u"e_MD",ei;digits=2)
 
     # xy position of N
-    Npos=sys.loggers.coords.history[1][1][1] |> u"Å"
+    xNi=sys.loggers.coords.history[1][1][1] |> u"Å"
+    yNi=sys.loggers.coords.history[1][1][2] |> u"Å"
 
     # number of steps between logging points for quantities
     stepsbtwnlogsCoords=sys.loggers.coords.n_steps
     stepsbtwnlogsE=sys.loggers.et.n_steps
-    stepsbtwnlogsF=sys.loggers.forces.n_steps
     stepsbtwnlogsV=sys.loggers.velocities.n_steps
 
     # time step between logging points for quantities in given/MD units. rounding due to floating point errors
     logdtCoords=stepsbtwnlogsCoords*dt
     logdtE=stepsbtwnlogsE*dt
-    logdtF=stepsbtwnlogsF*dt
     logdtV=stepsbtwnlogsV*dt
     logdtCoordsmd=round(u"t_MD",logdtCoords;digits=2)
     logdtEmd=round(u"t_MD",logdtE;digits=2)
-    logdtFmd=round(u"t_MD",logdtF;digits=2)
     logdtVmd=round(u"t_MD",logdtV;digits=2)
+
+    if !multirun
+        stepsbtwnlogsF=sys.loggers.forces.n_steps
+        logdtF=stepsbtwnlogsF*dt
+        logdtFmd=round(u"t_MD",logdtF;digits=2)
+    else
+        stepsbtwnlogsF=NaN
+        logdtF=NaN
+        logdtFmd=NaN
+    end
 
     # final slab energy in given/MD units. rounding due to floating point errors
     finalE=sys.loggers.et.history[end]
@@ -353,7 +397,8 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io)
         println(io,"T: $(param.T[1])")
         println(io,"Incident energy of molecule: $ei ($eimd)")
-        println(io,"Initial x/y position of molecule: $Npos")
+        println(io,"Initial x position of molecule: $xNi")
+        println(io,"Initial y position of molecule: $yNi")
         println(io)
         if desc==noaurundesc
             println(io,"PESs:")
@@ -428,7 +473,7 @@ function outputsysinfo(sys,dt,systype,path=".",simplerun=false)
         outputallsyscoords(sys,dt,path)
     end
     if systype==noaurundesc
-        outputallatomizcoords(sys,dt,1,path)
+        outputallatomizcoords(sys,dt,1:2,path)
     end
 
     if !simplerun
@@ -444,47 +489,36 @@ end
 ############################################################################################################
 
 """
-run MD on a system and output run info to results folder
+helper function to make folder for results
 """
-function runMDprintresults(sys,desc,simulator,steps)
-    # time of run
-    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
-    
-    # make folder to store results of current run
-    resultpath=mkpath("results/$desc-$steps--$date")
-
-    # time step in simulation
-    dt=simulator.dt
-
-    # run MD+give run time
-    runtime=@elapsed simulate!(sys, simulator, steps)
-    runtime*=u"s"
-
-    # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,dt,desc,resultpath,multirun)
-
-    # output summary of run
-    outputsummary(sys,dt,desc,steps,runtime,resultpath)
+function makeresultsfolder(desc::String,steps)
+   date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+   mkpath("results/$desc-$steps--$date")
 end
+
+function makeresultsfolder(desc::String)
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    mkpath("$desc--$date")
+ end
 
 ############################################################################################################
 
 """
-run MD on a system and output run info to specified folder
+run MD on a system and output run info to path
 """
-function runMDprintresults(sys,desc,simulator,steps,path)
-    # time step in simulation
-    dt=simulator.dt
+function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path::String=makeresultsfolder(desc,steps))
+   # time step in simulation
+   dt=simulator.dt
 
-    # run MD+give run time
-    runtime=@elapsed simulate!(sys, simulator, steps)
-    runtime*=u"s"
+   # run MD+give run time
+   runtime=@elapsed simulate!(sys, simulator, steps)
+   runtime*=u"s"
 
-    # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,dt,desc,path,multirun)
+   # output all system data: animation, coords, last velocities/forces
+   outputsysinfo(sys,dt,desc,path,multirun)
 
-    # output summary of run
-    outputsummary(sys,dt,desc,steps,runtime,path)
+   # output summary of run
+   outputsummary(sys,dt,desc,steps,runtime,path)
 end
 
 ############################################################################################################
@@ -520,31 +554,54 @@ end
 get final NO coords/vel + energies. output as vec in MD units
 """
 function finalE_NO(s::System)
+    # NO masses
     mN=s.atoms[1].mass
     mO=s.atoms[2].mass
     mt=mN+mO
     μNO=mN*mO/mt
 
+    # NO last coords
     finalrN=s.loggers.coords.history[end][1] .|> u"d_MD"
     finalrO=s.loggers.coords.history[end][2] .|> u"d_MD"
     rvec_NO=vector(finalrN,finalrO,s.boundary)
     ur_NO=normalize(rvec_NO)
 
+    # NO last velocities
     finalvN=s.loggers.velocities.history[end][1] .|> u"v_MD"
     finalvO=s.loggers.velocities.history[end][2] .|> u"v_MD"
     vvec_NO=finalvO-finalvN
 
+    # NO final translational energy
     vcom_sq=sum([getCOM(mN,mO,finalvN[i],finalvO[i])^2 for i in eachindex(finalvN)])
     finalEtrans=0.5*mt*vcom_sq*N_A |> u"e_MD"
 
+    # NO final vibrational KE
     vvib_sq=dot(ur_NO,vvec_NO)^2
     finalKEvib=0.5*μNO*vvib_sq*N_A |> u"e_MD"
 
+    # NO final total KE/rotational energy
     finalKEtot=0.5*sum(mN.*finalvN.^2+mO.*finalvO.^2)*N_A |> u"e_MD"
     finalErot=finalKEtot-finalEtrans-finalKEvib
 
+    # output final NO coords, velocities, energies
     Evec=[finalKEtot,finalEtrans,finalErot,finalKEvib]
     ustrip_vec(vcat(finalrN,finalrO,finalvN,finalvO,Evec))
+end
+
+############################################################################################################
+
+"""helper function: zip folders in dir"""
+function zipfolders(dirpath::String)
+    curdir=pwd()
+    cd(dirpath)
+    dircontents=readdir()
+    archivename="traj_details.zip"
+    run(`zip -r $archivename $dircontents`)
+
+    for i in eachindex(dircontents)
+        rm(dircontents[i],recursive=true)
+    end
+    cd(curdir)
 end
 
 ############################################################################################################

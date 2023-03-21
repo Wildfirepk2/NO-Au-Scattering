@@ -40,41 +40,35 @@ function getLastAuVelocities()
 end
 
 ############################################################################################################
+# # \old
+# function initNOCoords()
+#     r=no.r[1]
+#     n_molec=1
+#     nocoords=place_diatomics(n_molec,virtboxdims,r)
 
-function initNOCoords()
-    r=no.r[1]
-    n_molec=1
-    nocoords=place_diatomics(n_molec,virtboxdims,r)
-
-	# place N 12 above Au surface
-	placeat=12u"Å"+maximum(au.z)
-	nz=nocoords[1][3]
-	delta=placeat-nz
-	[nocoords[i]+[0u"Å",0u"Å",delta] for i in eachindex(nocoords)]
-end
+# 	# place N 12 above Au surface
+# 	placeat=12u"Å"+maximum(au.z)
+# 	nz=nocoords[1][3]
+# 	delta=placeat-nz
+# 	[nocoords[i]+[0u"Å",0u"Å",delta] for i in eachindex(nocoords)]
+# end
 
 ############################################################################################################
 
 # \debugging
-function initNOCoords(xypos)
+function initNOCoords(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
     r=no.r[1]
 	zN=12u"Å"+maximum(au.z)
 	zO=zN+r
-	[SA[xypos,xypos,zN],SA[xypos,xypos,zO]]
+
+	# place N and O at same spot
+	[SA[xNi,yNi,zN],SA[xNi,yNi,zO]]
 end
 
 ############################################################################################################
 
-function initNOAuCoords()
-	nocoords=initNOCoords()
-	aucoords=getEquilAuCoords()
-	vcat(nocoords,aucoords)
-end
-
-############################################################################################################
-# \debug
-function initNOAuCoords(xypos)
-	nocoords=initNOCoords(xypos)
+function initNOAuCoords(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
+	nocoords=initNOCoords(xNi,yNi)
 	aucoords=getEquilAuCoords()
 	vcat(nocoords,aucoords)
 end
@@ -122,9 +116,9 @@ end
 ############################################################################################################
 
 """
-initiallize NO/Au system
+initiallize NO/Au system. N placed at specified x,y position
 """
-function initNOAuSys()
+function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
 	# defining MD propagation method (velocity verlet)
 	simul = VelocityVerlet(
 		# Time step
@@ -135,100 +129,82 @@ function initNOAuSys()
 	)
 
 	# defining system
-	s = System(
-		# initializing atoms in system
-		atoms=initNOAuAtoms(),
-
-		# system bound by custom NO/Au interactions. using neighbor list=true
-		pairwise_inters=(NOAuInteraction(true),),
-
-		# initial atom coordinates. using static arrays (SA) for Molly compatibility
-		coords=initNOAuCoords(),
-
-		# initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-		velocities=initNOAuVelocities(),
-
-		# system boundary. is periodic in x,y
-		boundary=simboxdims,
-
-		# using custom neighbor finder
-		neighbor_finder=NONeighborFinder(
-			N_cutoff=PES_GS.AuNcutoff[1],
-			O_cutoff=PES_GS.AuOcutoff[1],
-		),
-
-		# tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
-		loggers=(
-			# checking energy conservation. E needs to be calculated before F
-			et=TotalEnergyLogger(actsteplog),
-			pe=PotentialEnergyLogger(actsteplog),
-			ke=KineticEnergyLogger(actsteplog),
-
-			# capture velocities and forces at last time step
-			velocities=VelocityLogger(steps_dyn),
-			forces=ForceLogger(steps_dyn),
-
-			# for animation
-			coords=CoordinateLogger(actsteplog),
-		),
-	)
-
-	return s, simul
-end
-
-############################################################################################################
-# \debug
-"""
-initiallize NO/Au system. no at certain position
-"""
-function initNOAuSys(xypos)
-	# defining MD propagation method (velocity verlet)
-	simul = VelocityVerlet(
-		# Time step
-		dt=param.dt[1],
-
-		# dont remove center of mass motion to keep layer fixed. may revert.
-		remove_CM_motion=false,
-	)
-
-	# defining system
-	s = System(
-		# initializing atoms in system
-		atoms=initNOAuAtoms(),
-
-		# system bound by custom NO/Au interactions. using neighbor list=true
-		pairwise_inters=(NOAuInteraction(true),),
-
-		# initial atom coordinates. using static arrays (SA) for Molly compatibility
-		coords=initNOAuCoords(xypos),
-
-		# initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-		velocities=initNOAuVelocities(),
-
-		# system boundary. is periodic in x,y
-		boundary=simboxdims,
-
-		# using custom neighbor finder
-		neighbor_finder=NONeighborFinder(
-			N_cutoff=PES_GS.AuNcutoff[1],
-			O_cutoff=PES_GS.AuOcutoff[1],
-		),
-
-		# tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
-		loggers=(
-			# checking energy conservation. E needs to be calculated before F
-			et=TotalEnergyLogger(actsteplog),
-			pe=PotentialEnergyLogger(actsteplog),
-			ke=KineticEnergyLogger(actsteplog),
-
-			# capture velocities and forces at last time step
-			velocities=VelocityLogger(steps_dyn),
-			forces=ForceLogger(steps_dyn),
-
-			# for animation
-			coords=CoordinateLogger(actsteplog),
-		),
-	)
+   if multirun
+      s = System(
+         # initializing atoms in system
+         atoms=initNOAuAtoms(),
+   
+         # system bound by custom NO/Au interactions. using neighbor list=true
+         pairwise_inters=(NOAuInteraction(true),),
+   
+         # initial atom coordinates. using static arrays (SA) for Molly compatibility
+         coords=initNOAuCoords(xNi,yNi),
+   
+         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
+         velocities=initNOAuVelocities(),
+   
+         # system boundary. is periodic in x,y
+         boundary=simboxdims,
+   
+         # using custom neighbor finder
+         neighbor_finder=NONeighborFinder(
+            N_cutoff=PES_GS.AuNcutoff[1],
+            O_cutoff=PES_GS.AuOcutoff[1],
+         ),
+   
+         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
+         loggers=(
+            # checking energy conservation AT LAST TIME STEP ONLY. E needs to be calculated before F
+            et=TotalEnergyLogger(steps_dyn),
+            pe=PotentialEnergyLogger(steps_dyn),
+            ke=KineticEnergyLogger(steps_dyn),
+   
+            # capture ONLY velocities at last time step
+            velocities=VelocityLogger(steps_dyn),
+   
+            # for animation
+            coords=CoordinateLogger(actsteplog),
+         ),
+      )
+   else
+      s = System(
+         # initializing atoms in system
+         atoms=initNOAuAtoms(),
+   
+         # system bound by custom NO/Au interactions. using neighbor list=true
+         pairwise_inters=(NOAuInteraction(true),),
+   
+         # initial atom coordinates. using static arrays (SA) for Molly compatibility
+         coords=initNOAuCoords(xNi,yNi),
+   
+         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
+         velocities=initNOAuVelocities(),
+   
+         # system boundary. is periodic in x,y
+         boundary=simboxdims,
+   
+         # using custom neighbor finder
+         neighbor_finder=NONeighborFinder(
+            N_cutoff=PES_GS.AuNcutoff[1],
+            O_cutoff=PES_GS.AuOcutoff[1],
+         ),
+   
+         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
+         loggers=(
+            # checking energy conservation. E needs to be calculated before F
+            et=TotalEnergyLogger(actsteplog),
+            pe=PotentialEnergyLogger(actsteplog),
+            ke=KineticEnergyLogger(actsteplog),
+   
+            # capture velocities and forces at last time step
+            velocities=VelocityLogger(steps_dyn),
+            forces=ForceLogger(steps_dyn),
+   
+            # for animation
+            coords=CoordinateLogger(actsteplog),
+         ),
+      )
+   end
 
 	return s, simul
 end
@@ -238,69 +214,15 @@ end
 """
 run no/au trajectory and output run info to results folder
 """
-function runNOAuTrajectory()
+function runNOAuTrajectory(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand(),path::String=makeresultsfolder(noaurundesc,steps_dyn))
 	# initialize system
-	sys_NOAu, simulator_NOAu = initNOAuSys()
-
-	# running MD + output results
-	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
-
-	println("NO/Au trajectory is complete")
-    println("Time to run: $t seconds")
-
-	return sys_NOAu
-end
-
-############################################################################################################
-# \debug
-"""
-run no/au trajectory and output run info to results folder
-"""
-function runNOAuTrajectory(xypos)
-	# initialize system
-	sys_NOAu, simulator_NOAu = initNOAuSys(xypos)
-
-	# running MD + output results
-	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn)
-
-	println("NO/Au trajectory is complete")
-    println("Time to run: $t seconds")
-
-	return sys_NOAu
-end
-
-############################################################################################################
-
-"""
-run no/au trajectory and output run info to specified folder
-"""
-function runNOAuTrajectory(path::String)
-	# initialize system
-	sys_NOAu, simulator_NOAu = initNOAuSys()
+	sys_NOAu, simulator_NOAu = initNOAuSys(xNi,yNi)
 
 	# running MD + output results
 	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, path)
 
 	println("NO/Au trajectory is complete")
-    println("Time to run: $t seconds")
-
-	return sys_NOAu
-end
-
-############################################################################################################
-# \debug
-"""
-run no/au trajectory and output run info to specified folder
-"""
-function runNOAuTrajectory(path,xypos)
-	# initialize system
-	sys_NOAu, simulator_NOAu = initNOAuSys(xypos)
-
-	# running MD + output results
-	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, path)
-
-	println("NO/Au trajectory is complete")
-    println("Time to run: $t seconds")
+	println("Time to run: $t seconds")
 
 	return sys_NOAu
 end
