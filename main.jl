@@ -2,20 +2,31 @@
 
 ############################################################################################################
 
+# global settings
+
 # if running on isaac or not
-const isaac=true
+const isaac=false
 
 # if generating multiple no-au trajectories
-const multirun=true
+const multirun=false
 
 # if running random trajectories (changes initial NO pos)
-const randomtraj=true
+const randomtraj=false
 
-### description of NO/Au run
-const noaurundesc="NO-Au_sc_E25"
+# energy in kJ/mol of NO runs. \fix
+const erun=25
+
+### description of NO/Au run. \fix
+const noaurundesc="NO-Au_sc_E$erun"
+
+### description of O/Au run. \fix
+const oaurundesc="O-Au_sc_E$erun"
 
 # if debugging
 const debug=false
+
+# if doing a O/Au run
+const runningoau=true
 
 ############################################################################################################
 
@@ -26,9 +37,12 @@ include("functions/InitSimParams.jl")
 include("functions/NOAuFVFunc.jl")
 include("functions/InitAuSys.jl")
 include("functions/InitNOAuSys.jl")
+include("functions/InitOAuSys.jl")
 include("functions/SupportMollyFunc.jl")
 include("functions/CustomMollyFunc.jl")
+include("functions/CustomOAuMollyFunc.jl")
 include("functions/SimAnalysisFunc.jl")
+include("functions/MultirunSupport.jl")
 
 ############################################################################################################
 
@@ -75,6 +89,9 @@ const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
 # actual steps for no/au scattering. maybe edit later to always be divisable by 10
 const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 
+# actual steps for o/au scattering. maybe edit later to always be divisable by 10
+const steps_dyn_OAu::Int64 = 5e2/scalefactor # \fix
+
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
@@ -108,6 +125,7 @@ rAu=initAuCoords()
 # nn_molly: molly neighbor object. same as nn. for molly compatibility
 nn,nn_molly=getnn()
 nntuples_au=[(nn_molly.list[i][1]+2,nn_molly.list[i][2]+2,nn_molly.list[i][3]) for i in eachindex(nn_molly.list)]
+nntuples_oau=[(nn_molly.list[i][1]+1,nn_molly.list[i][2]+1,nn_molly.list[i][3]) for i in eachindex(nn_molly.list)]
 
 # array of matrices. initial distances to nearest neighbors for each atom. nn xyz coords stored in columns
 r0ij=getdrij(rAu)
@@ -123,118 +141,52 @@ Aijarray=initAijarray()
 
 ############################################################################################################
 
-# NO/Au scattering (MD with velocity verlet)
+if runningoau
+    # O/Au scattering (MD with velocity verlet)
+    if multirun
+        ts, eis, xs, ys = initTExy()
+        vary="T_Ei_xy"
+        trajtrap, trajscatter, counttraj = inittrajcontainers()
 
-if multirun
-    if debug
-        ts=(300:50:350)u"K"
-        eis=(20:20:40)u"kJ/mol"
-        if randomtraj
-            ntraj=2
-            xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(ntraj)]
-            ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(ntraj)]
-        else
-            xs=(1:2:3)u"Å"
-            ys=xs
-        end
+        desc = isaac ? "$(oaurundesc)_multi_runs-ISAAC" : "$(oaurundesc)_multi_runs"
+        outpath=makeresultsfolder(desc,vary)
+
+        runMultiOAuTrajectory(ts, eis, xs, ys)
     else
-        ts=(300:50:300)u"K"
-        eis=(25:25:25)u"kJ/mol"
-        if randomtraj
-            ntraj=200
-            xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(ntraj)]
-            ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(ntraj)]
-        else
-            xs=(3:2:21)u"Å"
-            ys=xs
-        end
-    end
-
-    vary="T_Ei_xy"
-    h=["T", "Ei", "xNOi", "yNOi", "xNf", "yNf", "zNf", "xOf", "yOf", "zOf", "vxNf", "vyNf", "vzNf", "vxOf", "vyOf", "vzOf", "KEtot", "Etrans", "Erot", "KEvib"]
-    trajtrap=DataFrame([name => [] for name in h])
-    trajscatter=DataFrame([name => [] for name in h])
-    h2=["T", "Ei", "n_scatter", "n_trap", "frac_scatter", "frac_trap"]
-    counttraj=DataFrame([name => [] for name in h2])
-
-    desc = isaac ? "$(noaurundesc)_multi_runs-ISAAC" : "$(noaurundesc)_multi_runs"
-    outpath=makeresultsfolder(desc,vary)
-
-    for i in eachindex(ts)
-        param.T[1]=ts[i]
-        T=Int64(ustrip(u"K",param.T[1]))
-        global aurundesc="Au_slab-T $T"
+        # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
         runAuSlabEquilibration()
-        tpath=mkpath("$outpath/T $T")
 
-        for j in eachindex(eis)
-            no.Et_i[1]=eis[j]
-            ei=round(ustrip(u"e_MD",no.Et_i[1]);digits=2)
-            eipath=mkpath("$tpath/Ei $ei")
-
-            nscatter=0
-            ntrap=0
-            for k in eachindex(xs)
-                xNOi=xs[k]
-                x=round(ustrip(u"Å",xNOi);digits=3)
-                yNOi=ys[k]
-                y=round(ustrip(u"Å",yNOi);digits=3)
-                xypath=makeresultsfolder("$eipath/x $x y $y")
-
-                sys=runNOAuTrajectory(xNOi,yNOi,xypath)
-                if !checkEconserved(sys)
-                    error("Energy not conserved")
-                end
-
-                finalNOinfo=finalE_NO(sys)
-                allinfo=vcat([T, ei, x, y], finalNOinfo)
-                if checkscattering(sys)
-                    nscatter+=1
-                    push!(trajscatter, allinfo)
-                else
-                    ntrap+=1
-                    push!(trajtrap, allinfo)
-                end
-            end
-
-            totaltraj=ntrap+nscatter
-            fracscatter=nscatter/totaltraj
-            fractrap=ntrap/totaltraj
-            push!(counttraj, [T, ei, nscatter, ntrap, fracscatter, fractrap])
+        if randomtraj
+            xNOi=au.aPBCx[1]*rand()
+            yNOi=au.aPBCy[1]*rand()
+        else
+            xNOi=25u"Å"
+            yNOi=xNOi
         end
+        sys=runOAuTrajectory(xNOi,yNOi)
     end
-
-    # zip all folders
-    zipfolders(outpath)
-    outputmultirunsummary(vary,counttraj,outpath)
-    outputtrajinfo(trajscatter,trajtrap,outpath)
 else
-    # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
-    runAuSlabEquilibration()
+    # NO/Au scattering (MD with velocity verlet)
+    if multirun
+        ts, eis, xs, ys = initTExy()
+        vary="T_Ei_xy"
+        trajtrap, trajscatter, counttraj = inittrajcontainers()
 
-    if randomtraj
-        xNOi=au.aPBCx[1]*rand()
-        yNOi=au.aPBCy[1]*rand()
+        desc = isaac ? "$(noaurundesc)_multi_runs-ISAAC" : "$(noaurundesc)_multi_runs"
+        outpath=makeresultsfolder(desc,vary)
+
+        runMultiNOAuTrajectory(ts, eis, xs, ys)
     else
-        xNOi=25u"Å"
-        yNOi=xNOi
+        # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
+        runAuSlabEquilibration()
+
+        if randomtraj
+            xNOi=au.aPBCx[1]*rand()
+            yNOi=au.aPBCy[1]*rand()
+        else
+            xNOi=25u"Å"
+            yNOi=xNOi
+        end
+        sys=runNOAuTrajectory(xNOi,yNOi)
     end
-    sys=runNOAuTrajectory(xNOi,yNOi)
 end
-
-############################################################################################################
-
-# make file for holding no/au related functions
-
-# make simulator/system variables for no/au in global. later on put in separate file like au slab equilibration
-
-# other variables
-# copied from fortran
-# Av_Et = 0
-# Av_theta = 0
-# Av_weighted_theta = 0
-# Norm_weighted_theta = 0
-# Av_Evib = 0
-# Av_Er = 0
-# Av_EAu = 0
-# NTRAP = 0

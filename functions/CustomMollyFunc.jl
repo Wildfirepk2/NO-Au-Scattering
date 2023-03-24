@@ -192,7 +192,7 @@ end
 
 ############################################################################################################
 
-# alter molly PE function above for NO/Au. need to calculate E all at once. doesnt have V_AuAu for speed. plus not in fortran
+# alter molly PE function above for NO/Au. need to calculate E all at once
 function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}}, neighbors=nothing)
     En=0 * s.energy_units
     Ei=0 * s.energy_units

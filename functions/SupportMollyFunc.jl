@@ -162,6 +162,118 @@ end
 
 ############################################################################################################
 
+@inline @inbounds function getVij_OAu(i,j,distbtwn,dr,dz,boundary)
+    En=0u"e_MD"
+    Ei=0u"e_MD"
+    Ec=0u"e_MD"
+    EAu=0u"e_MD"
+
+    if i==1
+        if j==1
+            # 1 time image, work function, and Ea calc
+            Ei=V11_image(dz)+PES_ionic.ϕ[1]-PES_ionic.Ea[1]
+        else
+            # O-Au interactions
+            if neutral_PES_active
+                En=V00_AuO(distbtwn)
+            end
+            if ionic_PES_active
+                Ei=V11_AuO(distbtwn)
+            end
+            if coupled_PES_active
+                Ec=V01_AuO(distbtwn)
+            end
+        end
+    else
+        # Au-Au interactions
+        it=i-1
+        jt=j-1
+
+        # find j in nn[i] and return index. needed to access items in variables based off nn
+        idx_j=findfirst(isequal(jt), nn[it])
+
+        # dist of nn pair away from equilibrium. static array
+        rij=vector(r0ij[it][:,idx_j],dr,boundary)
+
+        # V nn pair exerts on atom i. number. divide by 2 because of v definition
+        EAu=dot(rij,Aijarray[it][idx_j],rij)/2
+    end
+
+    return En,Ei,Ec,EAu
+end
+
+############################################################################################################
+
+@inline @inbounds function getFij_OAu(i,j,vec_ij,dz,boundary)
+    Fn=0u"N/mol"
+    Fi=0u"N/mol"
+    Fc=0u"N/mol"
+    Fimg=0u"N/mol"
+    F_AuNc=zeros(3)u"N/mol"
+    F_AuAu=zeros(3)u"N/mol"
+
+    if i==1
+        distbtwn=euclidean(vec_ij,zeros(3)u"Å")
+        u=normalize(vec_ij)
+
+        if neutral_PES_active && ionic_PES_active && coupled_PES_active
+            # get eigenvalues
+            λ1=storeEs[end,2]
+            λ2=storeEs[end,3]
+            a=λ1^2
+            b=λ2^2
+            c=2*λ1*λ2
+
+            if j==1
+                Fimg=F11_image(dz)
+                return -[0u"N/mol",0u"N/mol",Fimg]*b
+            else
+                Fn=F00_AuO(distbtwn)
+                Fi=F11_AuO(distbtwn)
+                Fc=F01_AuO(distbtwn)
+                Fg=(Fn*a+Fi*b+Fc*c)*u
+                return Fg
+            end
+        elseif ionic_PES_active
+            if j==1
+                Fimg=F11_image(dz)
+                return -[0u"N/mol",0u"N/mol",Fimg]
+            else
+                Fi=F11_AuO(distbtwn)
+                return Fi*u
+            end
+        else
+            Fn=F00_AuO(distbtwn)
+            return Fn*u
+        end
+    else
+        # Au-Au interactions
+        it=i-1
+        jt=j-1
+
+        # find j in nn[i] and return index. needed to access items in variables based off nn
+        idx_j=findfirst(isequal(jt), nn[it])
+
+        # no forces on atoms in last layer
+        if i<auatomcutoff # need ref to original i since auatomcutoff=398
+            # normal operation
+
+            # dist of nn pair away from equilibrium. static array
+            rij=vector(r0ij[it][:,idx_j],vec_ij,boundary)
+
+            # force nn pair exerts on atom i. static array
+            F_AuAu=SVector{3}(-Aijarray[it][idx_j]*rij)
+        else
+            # no force on Au atoms
+            F_AuAu=SVector{3}(zeros(3)u"N/mol")
+        end
+
+        return F_AuAu
+    end
+end
+
+############################################################################################################
+
 """
 copy of molly's visualize fn (in src/makie.jl) for use w CairoMakie. used if isaac=true
 """

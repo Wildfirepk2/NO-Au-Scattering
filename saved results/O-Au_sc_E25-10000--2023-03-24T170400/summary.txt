@@ -1,0 +1,28 @@
+O/Au(111) Scattering
+
+Time of run: 2023-03-24 17:08:04
+Number of atoms: 529
+Number of steps: 10000
+Time step: 1 fs (0.1 t_MD)
+Total time: 10000 fs (1000.0 t_MD)
+Simulation runtime: 221.377449443 s
+Ran on ISAAC: false
+
+T: 300 K
+Incident energy of molecule: 100 kJ mol⁻¹ (1.0 e_MD)
+Initial x position of molecule: 25.0 Å
+Initial y position of molecule: 25.0 Å
+
+Steps between logging quantities
+    Coords: 10
+    Energies: 10
+    Forces: 10000
+    Velocities: 10000
+
+Time period between logging quantities
+    Coords: 10 fs (1.0 t_MD)
+    Energies: 10 fs (1.0 t_MD)
+    Forces: 10000 fs (1000.0 t_MD)
+    Velocities: 10000 fs (1000.0 t_MD)
+
+Final System Total Energy: 1513.7175920068655 kJ mol⁻¹ (15.14 e_MD)

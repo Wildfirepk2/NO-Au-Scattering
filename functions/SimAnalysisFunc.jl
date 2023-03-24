@@ -332,7 +332,13 @@ print txt file with summary of run.
 """
 function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
-    title = desc==aurundesc ? "Au(111) Slab Equilibration" : "NO/Au(111) Scattering"
+    if desc==aurundesc
+        title="Au(111) Slab Equilibration"
+    elseif desc==noaurundesc
+        title="NO/Au(111) Scattering"
+    else
+        title="O/Au(111) Scattering"
+    end
     
     # time of run
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
@@ -428,35 +434,45 @@ end
 """
 output animation of trajectory for system
 """
-function outputanimation(sys,path=".")
-    # type of interaction. au or no/au
-    inter_type=typeof(first(sys.pairwise_inters))
-    
-    if inter_type==AuSlabInteraction
-        # output animation of simulation in $path
-        if isaac
-            myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
-        else
-            visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
-        end
-    elseif inter_type==NOAuInteraction
-        # connecting N and O atoms with purple line
-        connections=[(1,2)]
-        connection_color=[:purple]
-
-        # colors of all atoms
-        NOcolors=[:blue,:red]
-        Aucolors=[:gold for _ in 1:au.N[1]]
-        syscolors=vcat(NOcolors,Aucolors)
-
-        # output animation of simulation in $path
-        if isaac
-            myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
-        else
-            visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
-        end
+function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},path=".")
+    # output animation of simulation in $path
+    if isaac
+        myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
+    else
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
     end
 end
+
+function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},path=".")
+    connections=[(1,2)]
+    connection_color=[:purple]
+
+    # colors of all atoms
+    NOcolors=[:blue,:red]
+    Aucolors=[:gold for _ in 1:au.N[1]]
+    syscolors=vcat(NOcolors,Aucolors)
+
+    # output animation of simulation in $path
+    if isaac
+        myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
+    else
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,connections=connections,connection_color=connection_color,color=syscolors,)
+    end
+end
+
+function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},path=".")
+    # colors of all atoms
+    Ocolor=[:red]
+    Aucolors=[:gold for _ in 1:au.N[1]]
+    syscolors=vcat(Ocolor,Aucolors)
+ 
+    # output animation of simulation in $path
+    if isaac
+        myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,color=syscolors,)
+    else
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false,color=syscolors,)
+    end
+ end
 
 ############################################################################################################
 
@@ -474,6 +490,8 @@ function outputsysinfo(sys,dt,systype,path=".",simplerun=false)
     end
     if systype==noaurundesc
         outputallatomizcoords(sys,dt,1:2,path)
+    elseif systype==oaurundesc
+        outputallatomizcoords(sys,dt,1,path)
     end
 
     if !simplerun
@@ -557,7 +575,7 @@ end
 """
 get final NO coords/vel + energies. output as vec in MD units
 """
-function finalE_NO(s::System)
+function finalE_molec(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}})
     # NO masses
     mN=s.atoms[1].mass
     mO=s.atoms[2].mass
@@ -590,6 +608,23 @@ function finalE_NO(s::System)
     # output final NO coords, velocities, energies
     Evec=[finalKEtot,finalEtrans,finalErot,finalKEvib]
     ustrip_vec(vcat(finalrN,finalrO,finalvN,finalvO,Evec))
+end
+
+function finalE_molec(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
+   # O mass
+   mO=s.atoms[1].mass
+
+   # O last coords
+   finalrO=s.loggers.coords.history[end][1] .|> u"d_MD"
+
+   # O last velocities
+   finalvO=s.loggers.velocities.history[end][1] .|> u"v_MD"
+
+   # O final translational energy
+   finalEtrans=0.5*mO*sum(finalvO.^2)*N_A |> u"e_MD"
+
+   # output final O coord, velocity, energy
+   ustrip_vec(vcat(finalrO,finalvO,finalEtrans))
 end
 
 ############################################################################################################
