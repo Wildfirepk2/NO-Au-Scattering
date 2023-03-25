@@ -16,7 +16,7 @@ function initTExy()
         ts=(300:50:300)u"K"
         eis=(erun:25:erun)u"kJ/mol" # \fix
         if randomtraj
-            ntraj=200
+            ntraj=400
             xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(ntraj)]
             ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(ntraj)]
         else

@@ -434,16 +434,7 @@ end
 """
 helper function: center of mass
 """
-function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)
-    (m1*r1 + m2*r2) / (m1 + m2)
-end
-
-############################################################################################################
-
-"""
-helper function: center of mass
-"""
-function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1::Unitful.Velocity, r2::Unitful.Velocity)
+function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1, r2)
     (m1*r1 + m2*r2) / (m1 + m2)
 end
 

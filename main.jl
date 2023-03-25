@@ -5,13 +5,13 @@
 # global settings
 
 # if running on isaac or not
-const isaac=false
+const isaac=true
 
 # if generating multiple no-au trajectories
-const multirun=false
+const multirun=true
 
 # if running random trajectories (changes initial NO pos)
-const randomtraj=false
+const randomtraj=true
 
 # energy in kJ/mol of NO runs. \fix
 const erun=25
@@ -26,7 +26,7 @@ const oaurundesc="O-Au_sc_E$erun"
 const debug=false
 
 # if doing a O/Au run
-const runningoau=true
+const runningoau=false
 
 ############################################################################################################
 
@@ -90,13 +90,13 @@ const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
 const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
 
 # actual steps for o/au scattering. maybe edit later to always be divisable by 10
-const steps_dyn_OAu::Int64 = 5e2/scalefactor # \fix
+const steps_dyn_OAu::Int64 = scalefactor>5000 ? 1 : param.Nsteps_dyn_OAu[1]/scalefactor
 
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of Au run \fix const
-aurundesc="Au_slab"
+const aurundesc="Au_slab"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true

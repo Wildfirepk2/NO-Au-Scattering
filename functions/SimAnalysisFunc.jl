@@ -151,7 +151,7 @@ end
 """
 output atom z coords (atoms #'s specified by vec) w time to excel file + make graph
 """
-function outputallatomizcoords(sys,dt,atomrange,path=".")
+function outputallatomizcoords(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,atomrange,path=".")
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -169,7 +169,52 @@ function outputallatomizcoords(sys,dt,atomrange,path=".")
     dfdata=Vector[time]
     
     for atom_i in atomrange
-        push!(dfheader,"z$atom_i")
+        if atom_i==1
+            label_i="zN"
+        elseif atom_i==2
+            label_i="zO"
+        else
+            label_i="zAu$atom_i"
+        end
+        push!(dfheader,label_i)
+        zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
+        push!(dfdata,zcoords)
+    end
+    
+    # write to excel file at $path
+    data=DataFrame(Dict(zip(dfheader,dfdata)))
+    file="$path/z-z_surf v time.xlsx"
+    write_xlsx(file,data)
+    
+    # make zcoord vs time graph
+    graphdesc = "Atom Height Above Surface with Time"
+    outputgraph(graphdesc,data,path)
+end
+
+function outputallatomizcoords(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,atomrange,path=".")
+    # logging interval. ie log coords after every $stepslog steps
+    stepslog=sys.loggers.coords.n_steps
+
+    # number of logs
+    nsteps=length(sys.loggers.coords.history)
+
+    # time between logs
+    dtlog=stepslog*dt
+
+    # tmp vars for time/coords + converted to MD units
+    z_surf=maximum(au.z)
+    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+    
+    dfheader=["t"]
+    dfdata=Vector[time]
+    
+    for atom_i in atomrange
+        if atom_i==1
+            label_i="zO"
+        else
+            label_i="zAu$atom_i"
+        end
+        push!(dfheader,label_i)
         zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
         push!(dfdata,zcoords)
     end
@@ -204,11 +249,13 @@ function outputgraph(desc,df::DataFrame,path=".")
     xunit=colunits[begin]
     yunit=colunits[begin+1]
     fig=scatterlines(dfnounits[!,begin],dfnounits[!,begin+1],label=colnames[begin+1];
+        markersize=5,
+        linewidth=0.5,
         axis = (; title = desc, xlabel = "$xunittype ($xunit)", ylabel = "$yunittype ($yunit)"))
 
     # add to plot obj
     for i in 2:numcols-1
-        scatterlines!(dfnounits[!,begin],dfnounits[!,i+1],label=colnames[i+1])
+        scatterlines!(dfnounits[!,begin],dfnounits[!,i+1],label=colnames[i+1];markersize=5,linewidth=0.5)
     end
     axislegend()
 
@@ -545,11 +592,27 @@ end
 
 ############################################################################################################
 
-function checkscattering(s::System)
-    cutoff=10u"Å"+maximum(au.z)
-    finalzN=s.loggers.coords.history[end][1][3]
+function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}})
+    mN=s.atoms[1].mass
+    mO=s.atoms[2].mass
+    rNf=s.loggers.coords.history[end][1]
+    rOf=s.loggers.coords.history[end][2]
 
-    if finalzN>=cutoff
+    cutoff=10u"Å"
+    zcom_f=getzcom(mN,mO,rNf,rOf)
+
+    if zcom_f>=cutoff
+        true
+    else
+        false
+    end
+end
+
+function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
+    zOf=s.loggers.coords.history[end][1][3]-maximum(au.z)
+    cutoff=10u"Å"
+
+    if zOf>=cutoff
         true
     else
         false
