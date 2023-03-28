@@ -23,7 +23,7 @@ const noaurundesc="NO-Au_sc_E$erun"
 const oaurundesc="O-Au_sc_E$erun"
 
 # if debugging
-const debug=false
+const debug=true
 
 # if doing a O/Au run
 const runningoau=false

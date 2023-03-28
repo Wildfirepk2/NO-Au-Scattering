@@ -375,17 +375,106 @@ end
 ############################################################################################################
 
 """
+helper func: get title for sys
+"""
+function getsystitle(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}})
+    "Au(111) Slab Equilibration"
+end
+
+function getsystitle(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}})
+    "NO/Au(111) Scattering"
+end
+
+function getsystitle(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
+    "O/Au(111) Scattering"
+end
+
+############################################################################################################
+
+"""
 print txt file with summary of run.
 """
-function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
-    if desc==aurundesc
-        title="Au(111) Slab Equilibration"
-    elseif desc==noaurundesc
-        title="NO/Au(111) Scattering"
+    title="Au(111) Slab Equilibration"
+    
+    # time of run
+    daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
+
+    # number of atoms in system
+    natoms=length(sys.atoms)
+
+    # time step of run (dt) in MD units. rounding due to floating point errors
+    dtmd=round(u"t_MD",dt;digits=2)
+
+    # total time of run in given/MD units. rounding due to floating point errors
+    ttotal=simsteps*dt
+    ttotalmd=round(u"t_MD",ttotal;digits=2)
+
+    # number of steps between logging points for quantities
+    stepsbtwnlogsCoords=sys.loggers.coords.n_steps
+    stepsbtwnlogsE=sys.loggers.et.n_steps
+    stepsbtwnlogsV=sys.loggers.velocities.n_steps
+
+    # time step between logging points for quantities in given/MD units. rounding due to floating point errors
+    logdtCoords=stepsbtwnlogsCoords*dt
+    logdtE=stepsbtwnlogsE*dt
+    logdtV=stepsbtwnlogsV*dt
+    logdtCoordsmd=round(u"t_MD",logdtCoords;digits=2)
+    logdtEmd=round(u"t_MD",logdtE;digits=2)
+    logdtVmd=round(u"t_MD",logdtV;digits=2)
+
+    # stepsbtwnlogsF=sys.loggers.forces.n_steps
+    #     logdtF=stepsbtwnlogsF*dt
+    #     logdtFmd=round(u"t_MD",logdtF;digits=2)
+
+    if !multirun
+        stepsbtwnlogsF=sys.loggers.forces.n_steps
+        logdtF=stepsbtwnlogsF*dt
+        logdtFmd=round(u"t_MD",logdtF;digits=2)
     else
-        title="O/Au(111) Scattering"
+        stepsbtwnlogsF=NaN
+        logdtF=NaN
+        logdtFmd=NaN
     end
+
+    # final slab energy in given/MD units. rounding due to floating point errors
+    finalE=sys.loggers.et.history[end]
+    finalEmd=round(u"e_MD",finalE;digits=2)
+
+    # write to txt
+    file="$runpath/summary.txt"
+    open(file,"w") do io
+        println(io,title)
+        println(io)
+        println(io,"Time of run: $daterun")
+        println(io,"Number of atoms: $natoms")
+        println(io,"Number of steps: $simsteps")
+        println(io,"Time step: $dt ($dtmd)")
+        println(io,"Total time: $ttotal ($ttotalmd)")
+        println(io,"Simulation runtime: $runtime")
+        println(io,"Ran on ISAAC: $isaac")
+        println(io,"T: $(param.T[1])")
+        println(io)
+        println(io,"Steps between logging quantities")
+        println(io,"    Coords: $stepsbtwnlogsCoords")
+        println(io,"    Energies: $stepsbtwnlogsE")
+        println(io,"    Forces: $stepsbtwnlogsF")
+        println(io,"    Velocities: $stepsbtwnlogsV")
+        println(io)
+        println(io,"Time period between logging quantities")
+        println(io,"    Coords: $logdtCoords ($logdtCoordsmd)")
+        println(io,"    Energies: $logdtE ($logdtEmd)")
+        println(io,"    Forces: $logdtF ($logdtFmd)")
+        println(io,"    Velocities: $logdtV ($logdtVmd)")
+        println(io)
+        println(io,"Final System Total Energy: $finalE ($finalEmd)")
+    end
+end
+
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+    # description of run
+    title="NO/Au(111) Scattering"
     
     # time of run
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
@@ -404,9 +493,11 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
     ei=no.Et_i[1]
     eimd=round(u"e_MD",ei;digits=2)
 
-    # xy position of N
+    # xy position of N/O
     xNi=sys.loggers.coords.history[1][1][1] |> u"Å"
     yNi=sys.loggers.coords.history[1][1][2] |> u"Å"
+    xOi=sys.loggers.coords.history[1][2][1] |> u"Å"
+    yOi=sys.loggers.coords.history[1][2][2] |> u"Å"
 
     # number of steps between logging points for quantities
     stepsbtwnlogsCoords=sys.loggers.coords.n_steps
@@ -449,17 +540,108 @@ function outputsummary(sys,dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
         println(io,"Ran on ISAAC: $isaac")
         println(io)
         println(io,"T: $(param.T[1])")
-        println(io,"Incident energy of molecule: $ei ($eimd)")
-        println(io,"Initial x position of molecule: $xNi")
-        println(io,"Initial y position of molecule: $yNi")
+        println(io,"Incident energy of NO: $ei ($eimd)")
+        println(io,"Initial x position of N: $xNi")
+        println(io,"Initial y position of N: $yNi")
+        println(io,"Initial x position of O: $xOi")
+        println(io,"Initial y position of O: $yOi")
         println(io)
-        if desc==noaurundesc
-            println(io,"PESs:")
-            println(io,"    neutral_PES_active = $neutral_PES_active")
-            println(io,"    ionic_PES_active = $ionic_PES_active")
-            println(io,"    coupled_PES_active = $coupled_PES_active")
-            println(io)
-        end
+        println(io,"PESs:")
+        println(io,"    neutral_PES_active = $neutral_PES_active")
+        println(io,"    ionic_PES_active = $ionic_PES_active")
+        println(io,"    coupled_PES_active = $coupled_PES_active")
+        println(io)
+        println(io,"Steps between logging quantities")
+        println(io,"    Coords: $stepsbtwnlogsCoords")
+        println(io,"    Energies: $stepsbtwnlogsE")
+        println(io,"    Forces: $stepsbtwnlogsF")
+        println(io,"    Velocities: $stepsbtwnlogsV")
+        println(io)
+        println(io,"Time period between logging quantities")
+        println(io,"    Coords: $logdtCoords ($logdtCoordsmd)")
+        println(io,"    Energies: $logdtE ($logdtEmd)")
+        println(io,"    Forces: $logdtF ($logdtFmd)")
+        println(io,"    Velocities: $logdtV ($logdtVmd)")
+        println(io)
+        println(io,"Final System Total Energy: $finalE ($finalEmd)")
+    end
+end
+
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+    # description of run
+    title="O/Au(111) Scattering"
+    
+    # time of run
+    daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
+
+    # number of atoms in system
+    natoms=length(sys.atoms)
+
+    # time step of run (dt) in MD units. rounding due to floating point errors
+    dtmd=round(u"t_MD",dt;digits=2)
+
+    # total time of run in given/MD units. rounding due to floating point errors
+    ttotal=simsteps*dt
+    ttotalmd=round(u"t_MD",ttotal;digits=2)
+
+    # mult runs
+    ei=no.Et_i[1]
+    eimd=round(u"e_MD",ei;digits=2)
+
+    # xy position of O
+    xOi=sys.loggers.coords.history[1][1][1] |> u"Å"
+    yOi=sys.loggers.coords.history[1][1][2] |> u"Å"
+
+    # number of steps between logging points for quantities
+    stepsbtwnlogsCoords=sys.loggers.coords.n_steps
+    stepsbtwnlogsE=sys.loggers.et.n_steps
+    stepsbtwnlogsV=sys.loggers.velocities.n_steps
+
+    # time step between logging points for quantities in given/MD units. rounding due to floating point errors
+    logdtCoords=stepsbtwnlogsCoords*dt
+    logdtE=stepsbtwnlogsE*dt
+    logdtV=stepsbtwnlogsV*dt
+    logdtCoordsmd=round(u"t_MD",logdtCoords;digits=2)
+    logdtEmd=round(u"t_MD",logdtE;digits=2)
+    logdtVmd=round(u"t_MD",logdtV;digits=2)
+
+    if !multirun
+        stepsbtwnlogsF=sys.loggers.forces.n_steps
+        logdtF=stepsbtwnlogsF*dt
+        logdtFmd=round(u"t_MD",logdtF;digits=2)
+    else
+        stepsbtwnlogsF=NaN
+        logdtF=NaN
+        logdtFmd=NaN
+    end
+
+    # final slab energy in given/MD units. rounding due to floating point errors
+    finalE=sys.loggers.et.history[end]
+    finalEmd=round(u"e_MD",finalE;digits=2)
+
+    # write to txt
+    file="$runpath/summary.txt"
+    open(file,"w") do io
+        println(io,title)
+        println(io)
+        println(io,"Time of run: $daterun")
+        println(io,"Number of atoms: $natoms")
+        println(io,"Number of steps: $simsteps")
+        println(io,"Time step: $dt ($dtmd)")
+        println(io,"Total time: $ttotal ($ttotalmd)")
+        println(io,"Simulation runtime: $runtime")
+        println(io,"Ran on ISAAC: $isaac")
+        println(io)
+        println(io,"T: $(param.T[1])")
+        println(io,"Incident energy of O: $ei ($eimd)")
+        println(io,"Initial x position of O: $xOi")
+        println(io,"Initial y position of O: $yOi")
+        println(io)
+        println(io,"PESs:")
+        println(io,"    neutral_PES_active = $neutral_PES_active")
+        println(io,"    ionic_PES_active = $ionic_PES_active")
+        println(io,"    coupled_PES_active = $coupled_PES_active")
+        println(io)
         println(io,"Steps between logging quantities")
         println(io,"    Coords: $stepsbtwnlogsCoords")
         println(io,"    Energies: $stepsbtwnlogsE")
@@ -528,7 +710,7 @@ output all system info. animation. logger quantities
 
 run description needs to contain either "Au slab" or "NO/Au"
 """
-function outputsysinfo(sys,dt,systype,path=".",simplerun=false)
+function outputsysinfo(sys,dt,systype::String,path::String=".",simplerun::Bool=false)
     # output quantities to excel file in separate folder
     if isaac
         outputallsyscoords(sys,dt,path,false,false)
