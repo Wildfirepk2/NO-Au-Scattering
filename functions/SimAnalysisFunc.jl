@@ -121,37 +121,61 @@ end
 ############################################################################################################
 
 """
-output atom i z coords w time to excel file + make graph
+helper function: get label of atom i. used in outputallatomizcoords
 """
-function outputallatomizcoords(sys,dt,atom_i::Int64,path=".")
-    # logging interval. ie log coords after every $stepslog steps
-    stepslog=sys.loggers.coords.n_steps
-
-    # number of logs
-    nsteps=length(sys.loggers.coords.history)
-
-    # time between logs
-    dtlog=stepslog*dt
-
-    # tmp vars for time/coords + converted to MD units
-    z_surf=maximum(au.z)
-    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
-    zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
-    
-    # write to excel file at $path
-    data=DataFrame(t=time,z=zcoords)
-    file="$path/z$atom_i-z_surf v time.xlsx"
-    write_xlsx(file,data)
-    
-    # make zcoord vs time graph
-    graphdesc = "Atom $atom_i Height Above Surface with Time"
-    outputgraph(graphdesc,data,path)
+function getatomilabel(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},atom_i::Int64)
+    "zAu$atom_i"
 end
+
+function getatomilabel(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},atom_i::Int64)
+    if atom_i==1
+        label_i="zN"
+    elseif atom_i==2
+        label_i="zO"
+    else
+        label_i="zAu$atom_i"
+    end
+    return label_i
+end
+
+function getatomilabel(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},atom_i::Int64)
+    atom_i==1 ? "zO" : "zAu$atom_i"
+end
+
+############################################################################################################
+
+# """
+# output atom i z coords w time to excel file + make graph
+# """
+# function outputallatomizcoords(sys,dt,atom_i::Int64,path=".")
+#     # logging interval. ie log coords after every $stepslog steps
+#     stepslog=sys.loggers.coords.n_steps
+
+#     # number of logs
+#     nsteps=length(sys.loggers.coords.history)
+
+#     # time between logs
+#     dtlog=stepslog*dt
+
+#     # tmp vars for time/coords + converted to MD units
+#     z_surf=maximum(au.z)
+#     time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+#     zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
+    
+#     # write to excel file at $path
+#     data=DataFrame(t=time,z=zcoords)
+#     file="$path/z$atom_i-z_surf v time.xlsx"
+#     write_xlsx(file,data)
+    
+#     # make zcoord vs time graph
+#     graphdesc = "Atom $atom_i Height Above Surface with Time"
+#     outputgraph(graphdesc,data,path)
+# end
 
 """
 output atom z coords (atoms #'s specified by vec) w time to excel file + make graph
 """
-function outputallatomizcoords(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,atomrange,path=".")
+function outputallatomizcoords(sys,dt,atomrange,path=".")
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -169,51 +193,7 @@ function outputallatomizcoords(sys::System{D, false, T, CU, A, AD, PI} where {D,
     dfdata=Vector[time]
     
     for atom_i in atomrange
-        if atom_i==1
-            label_i="zN"
-        elseif atom_i==2
-            label_i="zO"
-        else
-            label_i="zAu$atom_i"
-        end
-        push!(dfheader,label_i)
-        zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
-        push!(dfdata,zcoords)
-    end
-    
-    # write to excel file at $path
-    data=DataFrame(Dict(zip(dfheader,dfdata)))
-    file="$path/z-z_surf v time.xlsx"
-    write_xlsx(file,data)
-    
-    # make zcoord vs time graph
-    graphdesc = "Atom Height Above Surface with Time"
-    outputgraph(graphdesc,data,path)
-end
-
-function outputallatomizcoords(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,atomrange,path=".")
-    # logging interval. ie log coords after every $stepslog steps
-    stepslog=sys.loggers.coords.n_steps
-
-    # number of logs
-    nsteps=length(sys.loggers.coords.history)
-
-    # time between logs
-    dtlog=stepslog*dt
-
-    # tmp vars for time/coords + converted to MD units
-    z_surf=maximum(au.z)
-    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
-    
-    dfheader=["t"]
-    dfdata=Vector[time]
-    
-    for atom_i in atomrange
-        if atom_i==1
-            label_i="zO"
-        else
-            label_i="zAu$atom_i"
-        end
+        label_i=getatomilabel(sys,atom_i)
         push!(dfheader,label_i)
         zcoords=[sys.loggers.coords.history[i][atom_i][3]-z_surf for i in eachindex(sys.loggers.coords.history)] .|> u"d_MD"
         push!(dfdata,zcoords)
@@ -266,9 +246,26 @@ end
 ############################################################################################################
 
 """
+helper function: title for E graph based on sys
+"""
+function getEtitle(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}})
+    "Au slab equilibration: Checking energy conservation"
+end
+
+function getEtitle(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}})
+    "NO/Au Scattering: Checking energy conservation"
+end
+
+function getEtitle(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
+    "O/Au Scattering: Checking energy conservation"
+end
+
+############################################################################################################
+
+"""
 output system energies w time to excel file + make graph
 """
-function outputsysE(sys,dt,systype,path=".")
+function outputsysE(sys,dt,path=".")
     # logging interval. ie log energies after every $stepslog steps
     stepslog=sys.loggers.et.n_steps
 
@@ -290,7 +287,7 @@ function outputsysE(sys,dt,systype,path=".")
     write_xlsx(file,data)
 
     # graph description based on system type
-    graphdesc = contains(systype,"Au slab") ? "Au slab equilibration: Checking energy conservation" : "NO/Au Scattering: Checking energy conservation"
+    graphdesc = getEtitle(sys)
 
     # make energy vs time graph
     outputgraph(graphdesc,data,path)
@@ -704,13 +701,40 @@ function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A
  end
 
 ############################################################################################################
+"""
+helper function: decide output z
+"""
+
 
 """
 output all system info. animation. logger quantities
 
 run description needs to contain either "Au slab" or "NO/Au"
 """
-function outputsysinfo(sys,dt,systype::String,path::String=".",simplerun::Bool=false)
+function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,path::String=".")
+    # output quantities to excel file in separate folder
+    if isaac
+        outputallsyscoords(sys,dt,path,false,false)
+    else
+        outputallsyscoords(sys,dt,path)
+    end
+    outputanimation(sys,path)
+    outputsysE(sys,dt,path)
+    outputallsysforces(sys,dt,path)
+    outputallsysvelocities(sys,dt,path)
+end
+
+function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,path::String=".")
+    # output quantities to excel file in separate folder
+    if isaac
+        outputallsyscoords(sys,dt,path,false,false)
+    else
+        outputallsyscoords(sys,dt,path)
+    end
+    outputallatomizcoords(sys,dt,1:2,path)
+end
+
+function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,path::String=".")
     # output quantities to excel file in separate folder
     if isaac
         outputallsyscoords(sys,dt,path,false,false)
@@ -727,7 +751,45 @@ function outputsysinfo(sys,dt,systype::String,path::String=".",simplerun::Bool=f
         # output animation of simulation in $path
         outputanimation(sys,path)
 
-        outputsysE(sys,dt,systype,path)
+        outputsysE(sys,dt,path)
+        outputallsysforces(sys,dt,path)
+        outputallsysvelocities(sys,dt,path)
+    end
+end
+
+function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,path::String=".")
+    # output quantities to excel file in separate folder
+    if isaac
+        outputallsyscoords(sys,dt,path,false,false)
+    else
+        outputallsyscoords(sys,dt,path)
+    end
+    outputallatomizcoords(sys,dt,1:2,path)
+
+    if !simplerun
+        # output animation of simulation in $path
+        outputanimation(sys,path)
+
+        outputsysE(sys,dt,path)
+        outputallsysforces(sys,dt,path)
+        outputallsysvelocities(sys,dt,path)
+    end
+end
+
+function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,path::String=".")
+    # output quantities to excel file in separate folder
+    if isaac
+        outputallsyscoords(sys,dt,path,false,false)
+    else
+        outputallsyscoords(sys,dt,path)
+    end
+    outputallatomizcoords(sys,dt,1,path)
+
+    if !simplerun
+        # output animation of simulation in $path
+        outputanimation(sys,path)
+
+        outputsysE(sys,dt,path)
         outputallsysforces(sys,dt,path)
         outputallsysvelocities(sys,dt,path)
     end

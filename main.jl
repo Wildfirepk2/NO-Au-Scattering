@@ -25,6 +25,9 @@ const oaurundesc="O-Au_sc_E$erun"
 # if debugging
 const debug=true
 
+# if wanting simple results. no animation, no fv excels, etc
+const simplerun=false
+
 # if doing a O/Au run
 const runningoau=false
 
