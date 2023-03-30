@@ -2,6 +2,41 @@
 
 ############################################################################################################
 
+"""
+helper function: get cos(θ) between two vectors
+
+cos(θ)=(zO-zN)/|rN-rO|
+"""
+function getcosth(rN::SVector,rO::SVector,b::CubicBoundary)
+	dz=rO[3]-rN[3]
+	sl=b.side_lengths
+	r=peuclidean(rN,rO,sl)
+    dz/r
+end
+
+############################################################################################################
+
+"""
+helper function: center of mass
+"""
+function getCOM(m1::Unitful.Mass, m2::Unitful.Mass, r1, r2)
+    (m1*r1 + m2*r2) / (m1 + m2)
+end
+
+############################################################################################################
+
+"""
+helper function: get zcom, the perpendicular distance of the center of mass of the NO molecule from the surface plane (z≈7.2Å)
+"""
+function getzcom(m1::Unitful.Mass, m2::Unitful.Mass, r1::SVector, r2::SVector)
+	com=getCOM(m1, m2, r1, r2)
+	zcom=com[3]
+	h_surf=maximum(au.z)
+	zcom-h_surf
+end
+
+############################################################################################################
+
 @inline @inbounds function getVij_NOAu(i,j,distbtwn,cosθ,dz,dr,boundary)
     En=0u"e_MD"
     Ei=0u"e_MD"

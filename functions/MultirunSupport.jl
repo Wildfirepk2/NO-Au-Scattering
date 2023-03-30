@@ -50,7 +50,7 @@ function runMultiNOAuTrajectory(ts, eis, xs, ys)
 	for i in eachindex(ts)
         param.T[1]=ts[i]
         T=Int64(ustrip(u"K",param.T[1]))
-        global aurundesc="Au_slab-T $T"
+        global aurundesc="Au_slab-T_$T"
         runAuSlabEquilibration()
         tpath=mkpath("$outpath/T $T")
 
