@@ -8,7 +8,7 @@ Base.length(xf::XLSX.XLSXFile) = XLSX.sheetcount(xf)
 """
 write data to excel file. intermediate function for output functions
 """
-function write_xlsx(file, dt, i, stepslog, df::DataFrame)
+function write_xlsx(file::String, dt, i, stepslog, df::DataFrame)
     # step no of simulation
     step=(i-1)*stepslog
 
@@ -43,7 +43,7 @@ end
 """
 simple version of write_xlsx for outputing energies. called in outputsysE
 """
-function write_xlsx(file, df::DataFrame)
+function write_xlsx(file::String, df::DataFrame)
     dfnounits=ustrip.(df)
     data = collect(eachcol(dfnounits))
     cols = names(dfnounits)
@@ -55,7 +55,7 @@ end
 """
 output atom coords at ith logging point to excel file. default path is current directory. used only in outputallsyscoords but can be called independently
 """
-function outputsyscoords(sys,dt,i,path=".",asexcel=true)
+function outputsyscoords(sys::System,dt,i,path=".",asexcel=true)
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -87,7 +87,7 @@ output atom coords w time to excel file at path. default path is current directo
 
 firstlastonly for speed. XLSX slow.
 """
-function outputallsyscoords(sys,dt,path=".",asexcel=true,firstlastonly=true)
+function outputallsyscoords(sys::System,dt,path=".",asexcel=true,firstlastonly=true)
     # coords from molly's loggers
     datasrc=sys.loggers.coords.history
 
@@ -175,7 +175,7 @@ end
 """
 output atom z coords (atoms #'s specified by vec) w time to excel file + make graph
 """
-function outputallatomizcoords(sys,dt,atomrange,path=".")
+function outputallatomizcoords(sys::System,dt,atomrange,path=".")
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.coords.n_steps
 
@@ -391,7 +391,7 @@ end
 """
 print txt file with summary of run.
 """
-function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="Au(111) Slab Equilibration"
     
@@ -425,7 +425,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     #     logdtF=stepsbtwnlogsF*dt
     #     logdtFmd=round(u"t_MD",logdtF;digits=2)
 
-    if !multirun
+    if !simplerun
         stepsbtwnlogsF=sys.loggers.forces.n_steps
         logdtF=stepsbtwnlogsF*dt
         logdtFmd=round(u"t_MD",logdtF;digits=2)
@@ -469,7 +469,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     end
 end
 
-function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="NO/Au(111) Scattering"
     
@@ -509,7 +509,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     logdtEmd=round(u"t_MD",logdtE;digits=2)
     logdtVmd=round(u"t_MD",logdtV;digits=2)
 
-    if !multirun
+    if !simplerun
         stepsbtwnlogsF=sys.loggers.forces.n_steps
         logdtF=stepsbtwnlogsF*dt
         logdtFmd=round(u"t_MD",logdtF;digits=2)
@@ -564,7 +564,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     end
 end
 
-function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,desc,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="O/Au(111) Scattering"
     
@@ -602,7 +602,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     logdtEmd=round(u"t_MD",logdtE;digits=2)
     logdtVmd=round(u"t_MD",logdtV;digits=2)
 
-    if !multirun
+    if !simplerun
         stepsbtwnlogsF=sys.loggers.forces.n_steps
         logdtF=stepsbtwnlogsF*dt
         logdtFmd=round(u"t_MD",logdtF;digits=2)
@@ -701,10 +701,6 @@ function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A
  end
 
 ############################################################################################################
-"""
-helper function: decide output z
-"""
-
 
 """
 output all system info. animation. logger quantities
@@ -718,42 +714,11 @@ function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     else
         outputallsyscoords(sys,dt,path)
     end
-    outputanimation(sys,path)
-    outputsysE(sys,dt,path)
-    outputallsysforces(sys,dt,path)
     outputallsysvelocities(sys,dt,path)
-end
-
-function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,path::String=".")
-    # output quantities to excel file in separate folder
-    if isaac
-        outputallsyscoords(sys,dt,path,false,false)
-    else
-        outputallsyscoords(sys,dt,path)
-    end
-    outputallatomizcoords(sys,dt,1:2,path)
-end
-
-function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,path::String=".")
-    # output quantities to excel file in separate folder
-    if isaac
-        outputallsyscoords(sys,dt,path,false,false)
-    else
-        outputallsyscoords(sys,dt,path)
-    end
-    if systype==noaurundesc
-        outputallatomizcoords(sys,dt,1:2,path)
-    elseif systype==oaurundesc
-        outputallatomizcoords(sys,dt,1,path)
-    end
-
     if !simplerun
-        # output animation of simulation in $path
         outputanimation(sys,path)
-
         outputsysE(sys,dt,path)
         outputallsysforces(sys,dt,path)
-        outputallsysvelocities(sys,dt,path)
     end
 end
 
@@ -765,11 +730,8 @@ function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
         outputallsyscoords(sys,dt,path)
     end
     outputallatomizcoords(sys,dt,1:2,path)
-
     if !simplerun
-        # output animation of simulation in $path
         outputanimation(sys,path)
-
         outputsysE(sys,dt,path)
         outputallsysforces(sys,dt,path)
         outputallsysvelocities(sys,dt,path)
@@ -784,11 +746,8 @@ function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
         outputallsyscoords(sys,dt,path)
     end
     outputallatomizcoords(sys,dt,1,path)
-
     if !simplerun
-        # output animation of simulation in $path
         outputanimation(sys,path)
-
         outputsysE(sys,dt,path)
         outputallsysforces(sys,dt,path)
         outputallsysvelocities(sys,dt,path)
@@ -824,14 +783,10 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
    runtime*=u"s"
 
    # output all system data: animation, coords, last velocities/forces
-   if desc==aurundesc
-        outputsysinfo(sys,dt,desc,path)
-   else
-        outputsysinfo(sys,dt,desc,path,multirun)
-   end
+   outputsysinfo(sys,dt,path)
 
    # output summary of run
-   outputsummary(sys,dt,desc,steps,runtime,path)
+   outputsummary(sys,dt,steps,runtime,path)
 end
 
 ############################################################################################################
@@ -845,22 +800,14 @@ function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     cutoff=10u"Å"
     zcom_f=getzcom(mN,mO,rNf,rOf)
 
-    if zcom_f>=cutoff
-        true
-    else
-        false
-    end
+    zcom_f>=cutoff ? true : false
 end
 
 function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
     zOf=s.loggers.coords.history[end][1][3]-maximum(au.z)
     cutoff=10u"Å"
 
-    if zOf>=cutoff
-        true
-    else
-        false
-    end
+    zOf>=cutoff ? true : false
 end
 
 ############################################################################################################
@@ -870,11 +817,7 @@ function checkEconserved(s::System)
     finalE=s.loggers.et.history[end]
     percentdif=abs(initialE-finalE)/initialE
 
-    if percentdif<0.01
-        true
-    else
-        false
-    end
+    percentdif<0.01 ? println("Energy conserved") : error("Energy not conserved")
 end
 
 ############################################################################################################
@@ -942,7 +885,7 @@ function zipfolders(dirpath::String)
     cd(dirpath)
     dircontents=readdir()
     archivename="traj_details.zip"
-    run(`zip -r $archivename $dircontents`)
+    run(`zip -qr $archivename $dircontents`)
 
     for i in eachindex(dircontents)
         rm(dircontents[i],recursive=true)

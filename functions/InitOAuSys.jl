@@ -54,7 +54,7 @@ function initOAuSys(xOi=au.aPBCx[1]*rand(),yOi=au.aPBCy[1]*rand())
 	)
 
 	# defining system
-   if multirun
+   if simplerun
       s = System(
          # initializing atoms in system
          atoms=initOAuAtoms(),

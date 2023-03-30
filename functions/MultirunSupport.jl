@@ -69,9 +69,7 @@ function runMultiNOAuTrajectory(ts, eis, xs, ys)
                 xypath=makeresultsfolder("$eipath/x $x y $y")
 
                 sys=runNOAuTrajectory(xNOi,yNOi,xypath)
-                if !checkEconserved(sys)
-                    error("Energy not conserved")
-                end
+                checkEconserved(sys)
 
                 finalNOinfo=finalE_molec(sys)
                 allinfo=vcat([T, ei, x, y], finalNOinfo)
@@ -125,9 +123,7 @@ function runMultiOAuTrajectory(ts, eis, xs, ys)
                 xypath=makeresultsfolder("$eipath/x $x y $y")
 
                 sys=runOAuTrajectory(xOi,yOi,xypath)
-                if !checkEconserved(sys)
-                    error("Energy not conserved")
-                end
+                checkEconserved(sys)
 
                 finalOinfo=finalE_molec(sys)
                 allinfo=vcat([T, ei, x, y], finalOinfo)

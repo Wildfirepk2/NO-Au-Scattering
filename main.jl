@@ -26,7 +26,7 @@ const oaurundesc="O-Au_sc_E$erun"
 const debug=true
 
 # if wanting simple results. no animation, no fv excels, etc
-const simplerun=false
+const simplerun=true
 
 # if doing a O/Au run
 const runningoau=false
@@ -99,7 +99,7 @@ const steps_dyn_OAu::Int64 = scalefactor>5000 ? 1 : param.Nsteps_dyn_OAu[1]/scal
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
 ### description of Au run \fix const
-const aurundesc="Au_slab"
+aurundesc="Au_slab"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
 const neutral_PES_active=true

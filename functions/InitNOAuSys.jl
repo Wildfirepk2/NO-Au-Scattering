@@ -129,7 +129,7 @@ function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
 	)
 
 	# defining system
-   if multirun
+   if simplerun
       s = System(
          # initializing atoms in system
          atoms=initNOAuAtoms(),

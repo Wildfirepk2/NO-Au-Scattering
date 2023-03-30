@@ -324,6 +324,7 @@ function runAuSlabEquilibration()
 
 		# running MD + output results
         t=@elapsed runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq)
+		checkEconserved(sys_Au)
         
 		println("Au slab is equilibrated")
         println("Time to run: $t seconds")
