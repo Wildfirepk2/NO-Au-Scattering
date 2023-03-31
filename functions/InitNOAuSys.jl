@@ -40,35 +40,53 @@ function getLastAuVelocities()
 end
 
 ############################################################################################################
-# # \old
-# function initNOCoords()
-#     r=no.r[1]
-#     n_molec=1
-#     nocoords=place_diatomics(n_molec,virtboxdims,r)
 
-# 	# place N 12 above Au surface
-# 	placeat=12u"Å"+maximum(au.z)
-# 	nz=nocoords[1][3]
-# 	delta=placeat-nz
-# 	[nocoords[i]+[0u"Å",0u"Å",delta] for i in eachindex(nocoords)]
-# end
-
-############################################################################################################
-
-# \debugging
-function initNOCoords(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
-    r=no.r[1]
-	zN=12u"Å"+maximum(au.z)
-	zO=zN+r
-
-	# place N and O at same spot
-	[SA[xNi,yNi,zN],SA[xNi,yNi,zO]]
+"""initial NO bond length/vib velocity"""
+function getrvNO()
+   idx=rand(1:length(no.r))
+   r=no.r[idx]
+   v=no.v[idx]
+   return r,v
 end
 
 ############################################################################################################
 
-function initNOAuCoords(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
-	nocoords=initNOCoords(xNi,yNi)
+"""random initial NO orientation"""
+function getNOorient()
+   vec=2rand(3).-1
+   normalize(vec)
+end
+
+"""
+specified initial NO orientation
+
+θ: angle between NO bond and surface normal (0°: N pointing down)
+"""
+function getNOorient(θ)
+   [sin(θ),0,cos(θ)]
+end
+
+############################################################################################################
+
+# \debugging
+function initNOCoords(rNOi,u::Vector,xcom=au.aPBCx[1]*rand(),ycom=au.aPBCy[1]*rand(),zcom=12u"Å")
+   # masses
+   mN=no.mN[1]
+   mO=no.mO[1]
+   μ=mN*mO/(mN+mO)
+
+   zcomact=zcom+maximum(au.z)
+   com=SA[xcom,ycom,zcomact]
+
+   rN=com-rNOi*μ/mN*u
+   rO=com+rNOi*μ/mO*u
+   [rN,rO]
+end
+
+############################################################################################################
+
+function initNOAuCoords(rNOi,u::Vector,xcom=au.aPBCx[1]*rand(),ycom=au.aPBCy[1]*rand())
+	nocoords=initNOCoords(rNOi,u,xcom,ycom)
 	aucoords=getEquilAuCoords()
 	vcat(nocoords,aucoords)
 end
@@ -83,23 +101,31 @@ end
 
 ############################################################################################################
 
-function initNOAuVelocities()
-	uv=normalize(SVector{3}(rand(-10:10,3))) # unit vector
-	uvneg=uv[3]<0 ? uv : -uv # downward velocity. moving toward surface
+function initNOVelocities(vrel,u::Vector)
+   # masses
+   mN=no.mN[1]
+   mO=no.mO[1]
+   mt=mN+mO
+   μ=mN*mO/mt
 
-	# convert incident molecule energy to velocity
+   # convert incident molecule energy to velocity
 	e=no.Et_i[1]
-	mass=(no.mN[1]+no.mO[1])*N_A # now in kg/mol
-	v=uvneg*sqrt(2*e/mass)
-	
-	nov=[v,v]
-	auv=[velocity(1u"u", 0u"K") for _ in 1:au.N[1]]
-	vcat(nov,auv)
+   θ=no.θi[1]
+	mass=mt*N_A # now in kg/mol
+	vmag=-sqrt(2*e/mass)
+   vcom=SA[vmag*sin(θ),0u"m/s",vmag*cos(θ)]
 
-	# \debugging
-	t=[SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)],SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)]]
-	auvt=getLastAuVelocities()
-	vcat(t,auvt)
+   vN=vcom-μ/mN*vrel*u
+   vO=vcom+μ/mO*vrel*u
+   [vN,vO]
+end
+
+############################################################################################################
+
+function initNOAuVelocities(vrel,u::Vector)
+	vno=initNOVelocities(vrel,u)
+   auv=getLastAuVelocities()
+	vcat(vno,auv)
 end
 
 ############################################################################################################
@@ -119,6 +145,12 @@ end
 initiallize NO/Au system. N placed at specified x,y position
 """
 function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
+   # initial NO BL/vib vel
+   rNOi,vrel=getrvNO()
+
+   # initial NO orientation
+   u=getNOorient()
+
 	# defining MD propagation method (velocity verlet)
 	simul = VelocityVerlet(
 		# Time step
@@ -138,10 +170,10 @@ function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
          pairwise_inters=(NOAuInteraction(true),),
    
          # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initNOAuCoords(xNi,yNi),
+         coords=initNOAuCoords(rNOi,u,xNi,yNi),
    
          # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initNOAuVelocities(),
+         velocities=initNOAuVelocities(vrel,u),
    
          # system boundary. is periodic in x,y
          boundary=simboxdims,
@@ -175,10 +207,10 @@ function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
          pairwise_inters=(NOAuInteraction(true),),
    
          # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initNOAuCoords(xNi,yNi),
+         coords=initNOAuCoords(rNOi,u,xNi,yNi),
    
          # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initNOAuVelocities(),
+         velocities=initNOAuVelocities(vrel,u),
    
          # system boundary. is periodic in x,y
          boundary=simboxdims,
@@ -220,6 +252,7 @@ function runNOAuTrajectory(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand(),path::S
 
 	# running MD + output results
 	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, path)
+   checkEconserved(sys_NOAu)
 
 	println("NO/Au trajectory is complete")
 	println("Time to run: $t seconds")

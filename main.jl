@@ -5,10 +5,10 @@
 # global settings
 
 # if running on isaac or not
-const isaac=true
+const isaac=false
 
 # if generating multiple no-au trajectories
-const multirun=true
+const multirun=false
 
 # if running random trajectories (changes initial NO pos)
 const randomtraj=true
@@ -22,11 +22,11 @@ const noaurundesc="NO-Au_sc_E$erun"
 ### description of O/Au run. \fix
 const oaurundesc="O-Au_sc_E$erun"
 
-# if debugging
-const debug=true
+# if debugging, cut steps to 1, multirun: 2 params T,E,xy
+const debug=false
 
 # if wanting simple results. no animation, no fv excels, etc
-const simplerun=true
+const simplerun=false
 
 # if doing a O/Au run
 const runningoau=false
