@@ -13,8 +13,11 @@ const noaurundesc=isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
 ### description of O/Au run. \fix
 const oaurundesc=isaac ? "O-Au_sc-ISAAC" : "O-Au_sc"
 
-# if debugging, cut steps to 1, multirun: 2 params T,E,xy
+# if debugging, multirun: 1 set T,E,xy
 const debug=true
+
+# if wanting 1 step only on trajs
+const shortrun=true
 
 # if wanting simple results. no animation, no fv excels, etc
 const simplerun=true
@@ -80,7 +83,7 @@ const stepslogging=10
 ### scale down factor on steps for debugging. f=1 -> no scaling.
 # au: f=500 -> 1 step
 # no/au: f=1e4 -> 1 step
-scalefactor = debug ? 1e4 : 1
+scalefactor = shortrun ? 1e4 : 1
 
 # actual steps for au equilibration. maybe edit later to always be divisable by 10
 const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
@@ -113,9 +116,7 @@ acttraj=getacttraj()
 # main variables
 
 # store eigenvalues for f func
-headers = ["Eg", "λ1", "λ2"]
-# fix later for specific types
-storeEs=DataFrame([name => [] for name in headers])
+storeEs=DataFrame()
 
 # store NO forces from AuN
 FNO_AuN=SVector[]
@@ -147,12 +148,12 @@ Aijarray=initAijarray()
 ############################################################################################################
 
 # NO/Au scattering (MD with velocity verlet)
-println("Running NO/Au scattering")
+println("---Running NO/Au scattering---")
 runMultiNOAuTrajectory()
 
 # NO/Au scattering. fixed orientation runs
 if !all(ismissing,no.θorient)
-    println("Running fixed orientation NO/Au scattering")
+    println("---Running fixed orientation NO/Au scattering---")
     runMultiNOAuTrajectory(;fixorient=true)
 end
 

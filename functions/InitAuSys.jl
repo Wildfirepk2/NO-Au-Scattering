@@ -16,12 +16,8 @@ called in getnn() only.
 """	
 function removeiipairs!(nn::Vector{Vector{Int64}})
 	for i in eachindex(nn)
-		for j in eachindex(nn[i])
-			if nn[i][j]==i
-				splice!(nn[i],j)
-				break
-			end
-		end
+		idx = findfirst(nn[i] .== i)
+		splice!(nn[i], idx)
 	end
 end
 

@@ -20,6 +20,15 @@ end
 
 ############################################################################################################
 
+"""
+helper function: get z graph desc based on sys
+"""
+function getzgraphdesc(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
+    "O Height Above Surface with Time"
+end
+
+############################################################################################################
+
 function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}},dt,T,Ei,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="O/Au(111) Scattering"

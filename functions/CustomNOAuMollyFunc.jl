@@ -120,7 +120,8 @@ function Molly.potential_energy(s::System{D, false, T, CU, A, AD, PI} where {D,T
     λ2=-Ec/√((Ei-Eg)^2+Ec^2)
 
     # store eigenvalues for force calculation
-    push!(storeEs,[Eg,λ1,λ2])
+    df=DataFrame(Eg=Eg,λ1=λ1,λ2=λ2)
+    append!(storeEs,df)
 
     # case for neu+ion?
     if neutral_PES_active && ionic_PES_active && coupled_PES_active

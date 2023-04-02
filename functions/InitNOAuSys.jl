@@ -69,7 +69,6 @@ end
 
 ############################################################################################################
 
-# \debugging
 function initNOCoords(rNOi,u::Vector,xcom=au.aPBCx[1]*rand(),ycom=au.aPBCy[1]*rand(),zcom=12u"Å")
    # masses
    mN=no.mN[1]
@@ -367,7 +366,9 @@ function runNOAuTrajectory(xcom::Unitful.Length=au.aPBCx[1]*rand(),
    checkEconserved(sys_NOAu)
 
 	println("NO/Au trajectory is complete")
+   println("Conditions: T=$T, Ei=$Ei, xcom=$xcom, ycom=$ycom")
 	println("Time to run: $t seconds")
+   println()
 
 	return sys_NOAu
 end
@@ -387,7 +388,9 @@ function runNOAuTrajectory(θorient::Unitful.DimensionlessQuantity,
    checkEconserved(sys_NOAu)
 
 	println("NO/Au trajectory is complete")
+   println("Conditions: T=$T, Ei=$Ei, θorient=$θorient, xcom=$xcom, ycom=$ycom")
 	println("Time to run: $t seconds")
+   println()
 
 	return sys_NOAu
 end

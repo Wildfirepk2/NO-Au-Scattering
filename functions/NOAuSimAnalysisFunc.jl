@@ -37,6 +37,15 @@ end
 ############################################################################################################
 
 """
+helper function: get z graph desc based on sys
+"""
+function getzgraphdesc(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}})
+    "NO Height Above Surface with Time"
+end
+
+############################################################################################################
+
+"""
 print txt file with summary of run.
 """
 function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,T,Ei,simsteps=NaN,runtime=NaN,runpath=".")
@@ -232,6 +241,21 @@ function finalE_molec(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,P
     finalErot=finalKEtot-finalEtrans-finalKEvib
 
     # output final NO coords, velocities, energies
-    Evec=[finalKEtot,finalEtrans,finalErot,finalKEvib]
-    ustrip_vec(vcat(finalrN,finalrO,finalvN,finalvO,Evec))
+    df=DataFrame(xNf=finalrN[1],
+            yNf=finalrN[2],
+            zNf=finalrN[3],
+            xOf=finalrO[1],
+            yOf=finalrO[2],
+            zOf=finalrO[3],
+            vxNf=finalvN[1],
+            vyNf=finalvN[2],
+            vzNf=finalvN[3],
+            vxOf=finalvO[1],
+            vyOf=finalvO[2],
+            vzOf=finalvO[3],
+            KEtot=finalKEtot,
+            Etrans=finalEtrans,
+            Erot=finalErot,
+            KEvib=finalKEvib)
+    ustrip.(df)
 end
