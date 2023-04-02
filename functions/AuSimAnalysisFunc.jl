@@ -20,7 +20,7 @@ end
 
 ############################################################################################################
 
-function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},dt,T,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="Au(111) Slab Equilibration"
     
@@ -80,7 +80,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
         println(io,"Total time: $ttotal ($ttotalmd)")
         println(io,"Simulation runtime: $runtime")
         println(io,"Ran on ISAAC: $isaac")
-        println(io,"T: $(param.T[1])")
+        println(io,"T: $T")
         println(io)
         println(io,"Steps between logging quantities")
         println(io,"    Coords: $stepsbtwnlogsCoords")

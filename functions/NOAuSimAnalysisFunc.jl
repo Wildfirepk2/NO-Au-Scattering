@@ -39,7 +39,7 @@ end
 """
 print txt file with summary of run.
 """
-function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,simsteps=NaN,runtime=NaN,runpath=".")
+function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{NOAuInteraction}},dt,T,Ei,simsteps=NaN,runtime=NaN,runpath=".")
     # description of run
     title="NO/Au(111) Scattering"
     
@@ -57,14 +57,15 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     ttotalmd=round(u"t_MD",ttotal;digits=2)
 
     # mult runs
-    ei=no.Et_i[1]
-    eimd=round(u"e_MD",ei;digits=2)
+    eimd=round(u"e_MD",Ei;digits=2)
 
     # xy position of N/O
     xNi=sys.loggers.coords.history[1][1][1] |> u"Å"
     yNi=sys.loggers.coords.history[1][1][2] |> u"Å"
+    zNi=sys.loggers.coords.history[1][1][3] |> u"Å"
     xOi=sys.loggers.coords.history[1][2][1] |> u"Å"
     yOi=sys.loggers.coords.history[1][2][2] |> u"Å"
+    zOi=sys.loggers.coords.history[1][2][3] |> u"Å"
 
     # number of steps between logging points for quantities
     stepsbtwnlogsCoords=sys.loggers.coords.n_steps
@@ -96,7 +97,7 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     # write to txt
     file="$runpath/summary.txt"
     open(file,"w") do io
-        println(io,title)
+        println(io,title) 
         println(io)
         println(io,"Time of run: $daterun")
         println(io,"Number of atoms: $natoms")
@@ -106,12 +107,14 @@ function outputsummary(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
         println(io,"Simulation runtime: $runtime")
         println(io,"Ran on ISAAC: $isaac")
         println(io)
-        println(io,"T: $(param.T[1])")
-        println(io,"Incident energy of NO: $ei ($eimd)")
+        println(io,"T: $T")
+        println(io,"Incident energy of NO: $Ei ($eimd)")
         println(io,"Initial x position of N: $xNi")
         println(io,"Initial y position of N: $yNi")
+        println(io,"Initial z position of N: $zNi")
         println(io,"Initial x position of O: $xOi")
         println(io,"Initial y position of O: $yOi")
+        println(io,"Initial z position of O: $zOi")
         println(io)
         println(io,"PESs:")
         println(io,"    neutral_PES_active = $neutral_PES_active")

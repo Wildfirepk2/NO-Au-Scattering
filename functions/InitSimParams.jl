@@ -131,6 +131,9 @@ function initNOParams()
 	no.v*=u"v_MD"#check up
 	no.Et_i*=u"kJ/mol"
 	no.θi*=u"°"
+	no.θorient*=u"°"
+	no.xi*=u"Å"
+	no.yi*=u"Å"
 	no.mN*=u"u"
 	no.mO*=u"u"
 

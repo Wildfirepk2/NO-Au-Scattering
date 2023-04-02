@@ -259,7 +259,7 @@ end
 
 ############################################################################################################
 
-function initAuSys()
+function initAuSys(T=param.T[1])
 	# defining MD propagation method (velocity verlet)
 	sim = VelocityVerlet(
 		# Time step
@@ -281,7 +281,7 @@ function initAuSys()
 		coords=[SA[au.x[i],au.y[i],au.z[i]] for i in 1:au.N[1]],
 
 		# initial atom velocities based on maxwell-Boltzmann distribution at system temp. freezing back layer (velocity at 0K is 0). using velocity function for back layer for consistent units
-		velocities=[i<auatomcutoff ? velocity(au.m[1], param.T[1]) : velocity(1u"u", 0u"K") for i in 1:au.N[1]],
+		velocities=[i<auatomcutoff ? velocity(au.m[1], T) : velocity(1u"u", 0u"K") for i in 1:au.N[1]],
 
 		# system boundary. is periodic in x,y
 		boundary=simboxdims,
@@ -313,17 +313,17 @@ end
 """
 run Au slab equilibration and output run info to results folder IF Au slab is not already equilibrated
 """
-function runAuSlabEquilibration()
+function runAuSlabEquilibration(T=param.T[1])
     audir=getAuDirPath("results")
     if audir isa Nothing
 		# redefine for Au equilibration
 		global auatomcutoff=397
 
 		# initialize system
-		sys_Au, simulator_Au = initAuSys()
+		sys_Au, simulator_Au = initAuSys(T)
 
 		# running MD + output results
-        t=@elapsed runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq)
+        t=@elapsed runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq, T)
 		checkEconserved(sys_Au)
         
 		println("Au slab is equilibrated")

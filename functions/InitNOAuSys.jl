@@ -6,7 +6,7 @@
 get equilibrated au coords from previous run
 """
 function getEquilAuCoords()
-    audir=getAuDirPath("results")
+   audir=getAuDirPath("results")
 	readaudir=readdir(audir)
 	i_coords=findfirst(contains.(readaudir,"syscoords.xlsx"))
 	if i_coords isa Int
@@ -17,8 +17,9 @@ function getEquilAuCoords()
 		dfcoord=DataFrame(XLSX.readtable(coordsfile,sheetlastcoord))
 		[SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
 	else
-		readcoorddir=readdir("$audir/syscoords")
-		lastcoords=readcoorddir[end]
+		readcoorddir=readdir("$audir/syscoords") # incorrectly sorts by number. eg 1,10,11,12,...,2,etc
+      sortedcoorddir = sort(readcoorddir, by = x -> parse(Int, match(r"\d+", x).match)) # sorted by name. eg syscoords 1,2,3,4,etc
+		lastcoords=sortedcoorddir[end]
 		dfcoord=CSV.read("$audir/syscoords/$lastcoords",DataFrame)
 		[SA[dfcoord[i,1],dfcoord[i,2],dfcoord[i,3]]u"d_MD" for i in 1:nrow(dfcoord)]
 	end
@@ -52,9 +53,13 @@ end
 ############################################################################################################
 
 """random initial NO orientation"""
-function getNOorient()
-   vec=2rand(3).-1
-   normalize(vec)
+function getNOorient(;fixorient=false)
+   if fixorient
+      [sin(θ),0,cos(θ)]
+   else
+      vec=2rand(3).-1
+      normalize(vec)
+   end
 end
 
 """
@@ -101,7 +106,7 @@ end
 
 ############################################################################################################
 
-function initNOVelocities(vrel,u::Vector)
+function initNOVelocities(vrel,u::Vector,Ei=no.Et_i[1])
    # masses
    mN=no.mN[1]
    mO=no.mO[1]
@@ -109,10 +114,9 @@ function initNOVelocities(vrel,u::Vector)
    μ=mN*mO/mt
 
    # convert incident molecule energy to velocity
-	e=no.Et_i[1]
    θ=no.θi[1]
 	mass=mt*N_A # now in kg/mol
-	vmag=-sqrt(2*e/mass)
+	vmag=-sqrt(2*Ei/mass)
    vcom=SA[vmag*sin(θ),0u"m/s",vmag*cos(θ)]
 
    vN=vcom-μ/mN*vrel*u
@@ -122,8 +126,8 @@ end
 
 ############################################################################################################
 
-function initNOAuVelocities(vrel,u::Vector)
-	vno=initNOVelocities(vrel,u)
+function initNOAuVelocities(vrel,u::Vector,Ei=no.Et_i[1])
+	vno=initNOVelocities(vrel,u,Ei)
    auv=getLastAuVelocities()
 	vcat(vno,auv)
 end
@@ -144,12 +148,12 @@ end
 """
 initiallize NO/Au system. N placed at specified x,y position
 """
-function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
+function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand(),Ei=no.Et_i[1];fixorient=false)
    # initial NO BL/vib vel
    rNOi,vrel=getrvNO()
 
    # initial NO orientation
-   u=getNOorient()
+   u=getNOorient(;fixorient=fixorient)
 
 	# defining MD propagation method (velocity verlet)
 	simul = VelocityVerlet(
@@ -173,7 +177,7 @@ function initNOAuSys(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand())
          coords=initNOAuCoords(rNOi,u,xNi,yNi),
    
          # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initNOAuVelocities(vrel,u),
+         velocities=initNOAuVelocities(vrel,u,Ei),
    
          # system boundary. is periodic in x,y
          boundary=simboxdims,
@@ -246,12 +250,12 @@ end
 """
 run no/au trajectory and output run info to results folder
 """
-function runNOAuTrajectory(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand(),path::String=makeresultsfolder(noaurundesc,steps_dyn))
+function runNOAuTrajectory(xNi=au.aPBCx[1]*rand(),yNi=au.aPBCy[1]*rand(),T=param.T[1],Ei=no.Et_i[1],path::String=makeresultsfolder(noaurundesc,steps_dyn);fixorient=false)
 	# initialize system
-	sys_NOAu, simulator_NOAu = initNOAuSys(xNi,yNi)
+	sys_NOAu, simulator_NOAu = initNOAuSys(xNi,yNi,Ei;fixorient=fixorient)
 
 	# running MD + output results
-	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, path)
+	t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, T, Ei, path)
    checkEconserved(sys_NOAu)
 
 	println("NO/Au trajectory is complete")

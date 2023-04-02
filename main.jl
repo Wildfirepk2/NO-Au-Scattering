@@ -5,28 +5,19 @@
 # global settings
 
 # if running on isaac or not
-const isaac=false
-
-# if generating multiple no-au trajectories
-const multirun=false
-
-# if running random trajectories (changes initial NO pos)
-const randomtraj=true
-
-# energy in kJ/mol of NO runs. \fix
-const erun=25
+const isaac=true
 
 ### description of NO/Au run. \fix
-const noaurundesc="NO-Au_sc_E$erun"
+const noaurundesc=isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
 
 ### description of O/Au run. \fix
-const oaurundesc="O-Au_sc_E$erun"
+const oaurundesc=isaac ? "O-Au_sc-ISAAC" : "O-Au_sc"
 
 # if debugging, cut steps to 1, multirun: 2 params T,E,xy
-const debug=false
+const debug=true
 
 # if wanting simple results. no animation, no fv excels, etc
-const simplerun=false
+const simplerun=true
 
 # if doing a O/Au run
 const runningoau=false
@@ -111,6 +102,12 @@ const neutral_PES_active=true
 const ionic_PES_active=true
 const coupled_PES_active=true
 
+# temp to test NO orientations
+const Torient=300
+
+# actual no of trajectories
+acttraj=getacttraj()
+
 ############################################################################################################
 
 # main variables
@@ -149,52 +146,15 @@ Aijarray=initAijarray()
 
 ############################################################################################################
 
+# NO/Au scattering (MD with velocity verlet)
+runMultiNOAuTrajectory()
+
+# NO/Au scattering. fixed orientation runs
+if !all(ismissing,no.θorient)
+    runMultiNOAuTrajectory(;fixorient=true)
+end
+
+# O/Au scattering
 if runningoau
-    # O/Au scattering (MD with velocity verlet)
-    if multirun
-        ts, eis, xs, ys = initTExy()
-        vary="T_Ei_xy"
-        trajtrap, trajscatter, counttraj = inittrajcontainers()
-
-        desc = isaac ? "$(oaurundesc)_multi_runs-ISAAC" : "$(oaurundesc)_multi_runs"
-        outpath=makeresultsfolder(desc,vary)
-
-        runMultiOAuTrajectory(ts, eis, xs, ys)
-    else
-        # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
-        runAuSlabEquilibration()
-
-        if randomtraj
-            xNOi=au.aPBCx[1]*rand()
-            yNOi=au.aPBCy[1]*rand()
-        else
-            xNOi=25u"Å"
-            yNOi=xNOi
-        end
-        sys=runOAuTrajectory(xNOi,yNOi)
-    end
-else
-    # NO/Au scattering (MD with velocity verlet)
-    if multirun
-        ts, eis, xs, ys = initTExy()
-        vary="T_Ei_xy"
-        trajtrap, trajscatter, counttraj = inittrajcontainers()
-
-        desc = isaac ? "$(noaurundesc)_multi_runs-ISAAC" : "$(noaurundesc)_multi_runs"
-        outpath=makeresultsfolder(desc,vary)
-
-        runMultiNOAuTrajectory(ts, eis, xs, ys)
-    else
-        # check if Au slab is equilibrated. if not, equilibrate Au slab (MD with velocity verlet)
-        runAuSlabEquilibration()
-
-        if randomtraj
-            xNOi=au.aPBCx[1]*rand()
-            yNOi=au.aPBCy[1]*rand()
-        else
-            xNOi=25u"Å"
-            yNOi=xNOi
-        end
-        sys=runNOAuTrajectory(xNOi,yNOi)
-    end
+    runMultiOAuTrajectory()
 end

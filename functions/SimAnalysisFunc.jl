@@ -348,7 +348,7 @@ function makeresultsfolder(desc::String)
 """
 run MD on a system and output run info to path
 """
-function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path::String=makeresultsfolder(desc,steps))
+function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,T,path::String=makeresultsfolder(desc,steps))
    # time step in simulation
    dt=simulator.dt
 
@@ -360,8 +360,23 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
    outputsysinfo(sys,dt,path)
 
    # output summary of run
-   outputsummary(sys,dt,steps,runtime,path)
+   outputsummary(sys,dt,T,steps,runtime,path)
 end
+
+function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,T,Ei,path::String=makeresultsfolder(desc,steps))
+    # time step in simulation
+    dt=simulator.dt
+ 
+    # run MD+give run time
+    runtime=@elapsed simulate!(sys, simulator, steps)
+    runtime*=u"s"
+ 
+    # output all system data: animation, coords, last velocities/forces
+    outputsysinfo(sys,dt,path)
+ 
+    # output summary of run
+    outputsummary(sys,dt,T,Ei,steps,runtime,path)
+ end
 
 ############################################################################################################
 
@@ -371,51 +386,4 @@ function checkEconserved(s::System)
     percentdif=abs(initialE-finalE)/initialE
 
     percentdif<0.01 ? println("Energy conserved") : error("Energy not conserved")
-end
-
-############################################################################################################
-
-"""helper function: zip folders in dir"""
-function zipfolders(dirpath::String)
-    curdir=pwd()
-    cd(dirpath)
-    dircontents=readdir()
-    archivename="traj_details.zip"
-    run(`zip -qr $archivename $dircontents`)
-
-    for i in eachindex(dircontents)
-        rm(dircontents[i],recursive=true)
-    end
-    cd(curdir)
-end
-
-############################################################################################################
-
-"""
-print txt file with summary of the multiple runs.
-"""
-function outputmultirunsummary(vary,counttraj::DataFrame,runpath=".")
-    file="$runpath/summary.txt"
-    open(file,"w") do io
-        println(io,"Summary of multiple runs")
-        println(io)
-        println(io,"Variables varied: $vary")
-        println(io,"Ran on ISAAC: $isaac")
-        println(io,"Random Trajectories?: $randomtraj")
-        println(io,"Debugging?: $debug")
-        println(io)
-        println(io,counttraj)
-    end
-end
-
-############################################################################################################
-
-"""
-print txt file with summary of the multiple runs.
-"""
-function outputtrajinfo(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
-    name_sc="$runpath/traj_scattered.xlsx"
-    name_tr="$runpath/traj_trapped.xlsx"
-    write_xlsx(name_sc,trajscatter)
-    write_xlsx(name_tr,trajtrap)
 end
