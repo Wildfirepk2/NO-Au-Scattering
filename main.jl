@@ -103,7 +103,7 @@ const ionic_PES_active=true
 const coupled_PES_active=true
 
 # temp to test NO orientations
-const Torient=300
+const Torient=300u"K"
 
 # actual no of trajectories
 acttraj=getacttraj()
@@ -147,10 +147,12 @@ Aijarray=initAijarray()
 ############################################################################################################
 
 # NO/Au scattering (MD with velocity verlet)
+println("Running NO/Au scattering")
 runMultiNOAuTrajectory()
 
 # NO/Au scattering. fixed orientation runs
 if !all(ismissing,no.θorient)
+    println("Running fixed orientation NO/Au scattering")
     runMultiNOAuTrajectory(;fixorient=true)
 end
 

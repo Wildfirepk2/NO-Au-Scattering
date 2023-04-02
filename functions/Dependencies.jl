@@ -17,4 +17,5 @@ end
 # using CairoMakie
 using Dates
 using Distances
+using Statistics
 # using FLoops

@@ -73,7 +73,7 @@ end
 ############################################################################################################
 
 """
-print txt file with summary of the multiple runs.
+print excel files with detailed trajectory info of the multiple runs.
 """
 function outputtrajinfo(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
     name_sc="$runpath/traj_scattered.xlsx"
@@ -87,13 +87,15 @@ end
 """
 run multiple no/au trajectories and output run info to results folder
 """
-function runMultiNOAuTrajectory(path::String=makeresultsfolder(noaurundesc,"normalrun");fixorient=false)
-	trajtrap, trajscatter, counttraj = inittrajcontainers()
+function runMultiNOAuTrajectory(;fixorient::Bool=false,
+                                path::String=makeresultsfolder(noaurundesc,fixorient ? "fixorient" : "normalrun")
+                                )
+    trajtrap, trajscatter, counttraj = inittrajcontainers()
 
-    for temp in skipmissing(param.T)
-        tempt=Int64(ustrip(u"K",temp))
+    if fixorient
+        tempt=Int64(ustrip(u"K",Torient))
         global aurundesc="Au_slab-T_$tempt"
-        runAuSlabEquilibration(temp)
+        runAuSlabEquilibration(Torient)
         tpath=mkpath("$path/T $tempt")
 
         for ei in skipmissing(no.Et_i)
@@ -102,57 +104,75 @@ function runMultiNOAuTrajectory(path::String=makeresultsfolder(noaurundesc,"norm
 
             nscatter=0
             ntrap=0
-            if fixorient && tempt==Torient
-                for θ in skipmissing(no.θorient)
-                    θt=Int64(ustrip(u"°",θ))
-                    θpath=mkpath("$eipath/orient $θt")
+            for orient in skipmissing(no.θorient)
+                orit=Int64(ustrip(u"°",orient))
+                oripath=mkpath("$eipath/orient $orit")
+                if all(ismissing, no.xi) || all(ismissing, no.yi)
+                    # run random trajectories
+                    xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
+                    ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(acttraj)]
 
-                    if all(ismissing, no.xi) || all(ismissing, no.yi)
-                        # run random trajectories
-                        xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
-                        ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(acttraj)]
-    
-                        for (x,y) in zip(xs,ys)
-                            xt=round(ustrip(u"Å",x);digits=3)
-                            yt=round(ustrip(u"Å",y);digits=3)
-                            xypath=makeresultsfolder("$θpath/x $xt y $yt")
-            
-                            sys=runNOAuTrajectory(x,y,temp,ei,xypath;fixorient=fixorient)
-    
-                            finalNOinfo=finalE_molec(sys)
-                            allinfo=vcat([tempt, eit, xt, yt], finalNOinfo)
-                            if checkscattering(sys)
-                                nscatter+=1
-                                push!(trajscatter, allinfo)
-                            else
-                                ntrap+=1
-                                push!(trajtrap, allinfo)
-                            end
-                            if debug; break; end
+                    for (x,y) in zip(xs,ys)
+                        xt=round(ustrip(u"Å",x);digits=3)
+                        yt=round(ustrip(u"Å",y);digits=3)
+                        xypath=makeresultsfolder("$oripath/x $xt y $yt")
+        
+                        sys=runNOAuTrajectory(orient,x,y,Torient,ei,xypath)
+
+                        finalNOinfo=finalE_molec(sys)
+                        allinfo=vcat([tempt, eit, xt, yt], finalNOinfo)
+                        if checkscattering(sys)
+                            nscatter+=1
+                            push!(trajscatter, allinfo)
+                        else
+                            ntrap+=1
+                            push!(trajtrap, allinfo)
                         end
-                    else
-                        # run specified trajectories
-                        for (x,y) in zip(skipmissing(no.xi), skipmissing(no.yi))
-                            xt=round(ustrip(u"Å",x);digits=3)
-                            yt=round(ustrip(u"Å",y);digits=3)
-                            xypath=makeresultsfolder("$θpath/x $xt y $yt")
-            
-                            sys=runNOAuTrajectory(x,y,temp,ei,xypath)
-    
-                            finalNOinfo=finalE_molec(sys)
-                            allinfo=vcat([tempt, eit, xt, yt], finalNOinfo)
-                            if checkscattering(sys)
-                                nscatter+=1
-                                push!(trajscatter, allinfo)
-                            else
-                                ntrap+=1
-                                push!(trajtrap, allinfo)
-                            end
-                            if debug; break; end
+                        if debug; break; end
+                    end
+                else
+                    # run specified trajectories
+                    for (x,y) in zip(skipmissing(no.xi), skipmissing(no.yi))
+                        xt=round(ustrip(u"Å",x);digits=3)
+                        yt=round(ustrip(u"Å",y);digits=3)
+                        xypath=makeresultsfolder("$oripath/x $xt y $yt")
+        
+                        sys=runNOAuTrajectory(orient,x,y,Torient,ei,xypath)
+ 
+                        finalNOinfo=finalE_molec(sys)
+                        allinfo=vcat([tempt, eit, xt, yt], finalNOinfo)
+                        if checkscattering(sys)
+                            nscatter+=1
+                            push!(trajscatter, allinfo)
+                        else
+                            ntrap+=1
+                            push!(trajtrap, allinfo)
                         end
+                        if debug; break; end
                     end
                 end
-            else
+                if debug; break; end
+            end
+
+            totaltraj=ntrap+nscatter
+            fracscatter=nscatter/totaltraj
+            fractrap=ntrap/totaltraj
+            push!(counttraj, [tempt, eit, nscatter, ntrap, fracscatter, fractrap])
+            if debug; break; end
+        end
+    else
+        for temp in skipmissing(param.T)
+            tempt=Int64(ustrip(u"K",temp))
+            global aurundesc="Au_slab-T_$tempt"
+            runAuSlabEquilibration(temp)
+            tpath=mkpath("$path/T $tempt")
+
+            for ei in skipmissing(no.Et_i)
+                eit=round(ustrip(u"e_MD",ei);digits=2)
+                eipath=mkpath("$tpath/Ei $eit")
+
+                nscatter=0
+                ntrap=0
                 if all(ismissing, no.xi) || all(ismissing, no.yi)
                     # run random trajectories
                     xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
@@ -163,7 +183,7 @@ function runMultiNOAuTrajectory(path::String=makeresultsfolder(noaurundesc,"norm
                         yt=round(ustrip(u"Å",y);digits=3)
                         xypath=makeresultsfolder("$eipath/x $xt y $yt")
         
-                        sys=runNOAuTrajectory(x,y,temp,ei,xypath;fixorient=fixorient)
+                        sys=runNOAuTrajectory(x,y,temp,ei,xypath)
 
                         finalNOinfo=finalE_molec(sys)
                         allinfo=vcat([tempt, eit, xt, yt], finalNOinfo)
@@ -197,15 +217,15 @@ function runMultiNOAuTrajectory(path::String=makeresultsfolder(noaurundesc,"norm
                         if debug; break; end
                     end
                 end
-            end
 
-            totaltraj=ntrap+nscatter
-            fracscatter=nscatter/totaltraj
-            fractrap=ntrap/totaltraj
-            push!(counttraj, [tempt, eit, nscatter, ntrap, fracscatter, fractrap])
+                totaltraj=ntrap+nscatter
+                fracscatter=nscatter/totaltraj
+                fractrap=ntrap/totaltraj
+                push!(counttraj, [tempt, eit, nscatter, ntrap, fracscatter, fractrap])
+                if debug; break; end
+            end
             if debug; break; end
         end
-        if debug; break; end
     end
 
     # zip all folders
