@@ -14,12 +14,12 @@ const noaurundesc=isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
 const oaurundesc=isaac ? "O-Au_sc-ISAAC" : "O-Au_sc"
 
 # if debugging, multirun: 1 set T,E,xy
-const debug=true
+const debug=false
 
 # if wanting 1 step only on trajs
-const shortrun=true
+const shortrun=false
 
-# if wanting simple results. no animation, no fv excels, etc
+# if wanting simple results. no animation, no fv excels, etc. if isaac, true
 const simplerun=true
 
 # if doing a O/Au run

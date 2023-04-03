@@ -87,6 +87,7 @@ function initOAuSys(xOi=au.aPBCx[1]*rand(),yOi=au.aPBCy[1]*rand())
             velocities=VelocityLogger(steps_dyn_OAu),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )
@@ -124,6 +125,7 @@ function initOAuSys(xOi=au.aPBCx[1]*rand(),yOi=au.aPBCy[1]*rand())
             forces=ForceLogger(steps_dyn_OAu),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )

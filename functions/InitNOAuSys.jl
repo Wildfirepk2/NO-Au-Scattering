@@ -197,6 +197,7 @@ function initNOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
             velocities=VelocityLogger(steps_dyn),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )
@@ -235,6 +236,7 @@ function initNOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
             forces=ForceLogger(steps_dyn),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )
@@ -301,6 +303,7 @@ function initNOAuSys(θorient::Unitful.DimensionlessQuantity,
             velocities=VelocityLogger(steps_dyn),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )
@@ -339,6 +342,7 @@ function initNOAuSys(θorient::Unitful.DimensionlessQuantity,
             forces=ForceLogger(steps_dyn),
    
             # for animation
+            charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
          ),
       )

@@ -185,6 +185,80 @@ function outputgraph(desc,df::DataFrame,path=".")
 
     # save plot to $path
     save("$path/$yunittype v $xunittype.png", fig)
+    return fig
+end
+
+############################################################################################################
+    
+"""helper function: get description for charge graph"""
+function getchargegraphdesc(s::(System{D, false, T, CU, A, AD, PI} where {D, T, CU, A, AD, PI <: Tuple{NOAuInteraction}}))
+    "Charge on NO vs Time"
+end
+
+function getchargegraphdesc(s::(System{D, false, T, CU, A, AD, PI} where {D, T, CU, A, AD, PI <: Tuple{OAuInteraction}}))
+    "Charge on O vs Time"
+end
+
+############################################################################################################
+#\fix
+"""
+graft charge to existing figure
+"""
+function outputcharge(f::Figure,sys::System,dt,path=".")
+    fc=outputcharge(sys,dt,path)
+    # mod fc axis to be on right
+
+    #stitch f./fc graphs 
+
+    # example:
+    f = Figure()
+
+    ax1 = Axis(f[1, 1], yticklabelcolor = :blue)
+    ax2 = Axis(f[1, 1], yticklabelcolor = :red, yaxisposition = :right)
+
+    lines!(ax1, 0..10, sin, color = :blue)
+    lines!(ax2, 0..10, x -> 100 * cos(x), color = :red)
+
+    f
+end
+
+"""
+make standalone charge graph
+"""
+function outputcharge(sys::System,dt,path=".")
+    charges=sys.loggers.charge.history .|> u"e"
+
+    # logging interval. ie log coords after every $stepslog steps
+    stepslog=sys.loggers.charge.n_steps
+
+    # number of logs
+    nsteps=length(charges)
+
+    # time between logs
+    dtlog=stepslog*dt
+
+    # tmp var for time + converted to MD units
+    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+    
+    data=DataFrame(t=time,Charge=charges)
+    
+    # write to excel file at $path
+    file="$path/charge v time.xlsx"
+    write_xlsx(file,data)
+    
+    # make zcoord vs time graph
+    graphdesc = getchargegraphdesc(sys)
+    outputgraph(graphdesc,data,path)
+end
+
+############################################################################################################
+#\fix
+"""
+output z coords vs charge on 1 graph
+"""
+function outputzcoordvscharge(sys::System,dt,atomrange,path=".")
+    f=outputallatomizcoords(sys,dt,atomrange,path)
+    outputcharge(f,sys,dt,path)
 end
 
 ############################################################################################################

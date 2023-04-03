@@ -58,6 +58,9 @@ function outputmultirunsummary(trajscatter::DataFrame,trajtrap::DataFrame,runpat
     if isempty(trajtrap)
         ts=unique(trajscatter.T)
         eis=unique(trajscatter.Ei)
+    elseif isempty(trajscatter)
+        ts=unique(trajtrap.T)
+        eis=unique(trajtrap.Ei)
     else
         ts=union(trajscatter.T,trajtrap.T)
         eis=union(trajscatter.Ei,trajtrap.Ei)
@@ -68,7 +71,7 @@ function outputmultirunsummary(trajscatter::DataFrame,trajtrap::DataFrame,runpat
         filtered_trajtrap = filter(row -> row.T == T && row.Ei == Ei, trajtrap)
 
         # data for this T and Ei
-        avg_Erot_sc=mean(filtered_trajscatter.Erot)
+        avg_Erot_sc=isempty(trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
         nscatter=nrow(filtered_trajscatter)
         ntrap=nrow(filtered_trajtrap)
         ntotal=nscatter+ntrap
@@ -192,6 +195,8 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
     println("---NO/Au multiruns complete---")
     println("Total time taken: $t")
     println()
+
+    # return sys # fails
 end  
 
 ############################################################################################################

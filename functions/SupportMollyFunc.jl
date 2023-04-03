@@ -437,3 +437,17 @@ function myvisualize(coord_logger,
         end
     end
 end
+
+############################################################################################################
+
+"""
+helper function: get λ2. implement in ChargeLogger
+"""
+function getcharge(s::System, neighbors=nothing; n_threads::Integer=Threads.nthreads())
+    return storeEs[end,3]
+end
+
+"""
+custom molly logger for charge
+"""
+ChargeLogger(n_steps) = GeneralObservableLogger(getcharge, Float64, n_steps)
