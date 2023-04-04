@@ -143,6 +143,8 @@ run multiple no/au trajectories and output run info to results folder
 function runMultiNOAuTrajectory(;fixorient::Bool=false,
                                     path::String=makeresultsfolder(noaurundesc,fixorient ? "fixorient" : "normalrun")
                                     )
+    fixorient ? println("---Running fixed orientation NO/Au scattering---") : println("---Running NO/Au scattering---")
+    println()
     trajtrap=DataFrame()
     trajscatter=DataFrame()
     
@@ -167,7 +169,7 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 xt=round(ustrip(u"Å",x);digits=3)
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/orient $orientt/x $xt y $yt")
-                sys=runNOAuTrajectory(orient,x,y,Torient,ei,resultpath)
+                sys=runNOAuTrajectory(x,y,Torient,ei,resultpath;θorient=orient)
                 runpostanalysis!(tempt, eit, xt, yt, sys,trajscatter,trajtrap)
                 if debug; break; end
             end
@@ -204,50 +206,43 @@ end
 """
 run multiple o/au trajectories and output run info to results folder
 """
-function runMultiOAuTrajectory(ts, eis, xs, ys)
-	for i in eachindex(ts)
-        param.T[1]=ts[i]
-        T=Int64(ustrip(u"K",param.T[1]))
-        global aurundesc="Au_slab-T $T"
-        runAuSlabEquilibration()
-        tpath=mkpath("$path/T $T")
-
-        for j in eachindex(eis)
-            no.Et_i[1]=eis[j]
-            ei=round(ustrip(u"e_MD",no.Et_i[1]);digits=2)
-            eipath=mkpath("$tpath/Ei $ei")
-
-            nscatter=0
-            ntrap=0
-            for k in eachindex(xs)
-                xOi=xs[k]
-                x=round(ustrip(u"Å",xOi);digits=3)
-                yOi=ys[k]
-                y=round(ustrip(u"Å",yOi);digits=3)
-                xypath=makeresultsfolder("$eipath/x $x y $y")
-
-                sys=runOAuTrajectory(xOi,yOi,xypath)
-
-                finalOinfo=finalE_molec(sys)
-                allinfo=vcat([T, ei], finalOinfo)
-                if checkscattering(sys)
-                    nscatter+=1
-                    push!(trajscatter, allinfo)
-                else
-                    ntrap+=1
-                    push!(trajtrap, allinfo)
-                end
-            end
-
-            totaltraj=ntrap+nscatter
-            fracscatter=nscatter/totaltraj
-            fractrap=ntrap/totaltraj
-            push!(counttraj, [T, ei, nscatter, ntrap, fracscatter, fractrap])
-        end
+function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc))
+    println("---Running O/Au scattering---")
+    trajtrap=DataFrame()
+    trajscatter=DataFrame()
+    
+    randtraj=all(ismissing, no.xi) || all(ismissing, no.yi)
+    if randtraj
+        xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
+        ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(acttraj)]
+    else # specified trajectories
+        xs=skipmissing(no.xi)
+        ys=skipmissing(no.yi)
     end
 
-    # zip all folders
-    zipfolders(path)
-    outputmultirunsummary(vary,counttraj,path)
-    outputtrajinfo(trajscatter,trajtrap,path)
-end
+    t=@elapsed begin
+        for temp in skipmissing(param.T), ei in skipmissing(no.Et_i), (x,y) in zip(xs,ys)
+            tempt=Int64(ustrip(u"K",temp))
+            global aurundesc="Au_slab-T_$tempt"
+            runAuSlabEquilibration(temp)
+            
+            eit=round(ustrip(u"e_MD",ei);digits=2)
+            xt=round(ustrip(u"Å",x);digits=3)
+            yt=round(ustrip(u"Å",y);digits=3)
+            resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
+            sys=runOAuTrajectory(x,y,temp,ei,resultpath)
+            runpostanalysis!(tempt, eit, xt, yt, sys,trajscatter,trajtrap)
+            if debug; break; end
+        end
+
+        # zip all folders
+        zipfolders(path)
+        outputmultirunresults(trajscatter,trajtrap,path)
+    end
+    t*=u"s"
+    println("---O/Au multiruns complete---")
+    println("Total time taken: $t")
+    println()
+
+    # return sys # fails
+end  

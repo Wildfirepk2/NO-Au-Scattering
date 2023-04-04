@@ -390,35 +390,20 @@ function makeresultsfolder(desc::String)
 """
 run MD on a system and output run info to path
 """
-function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,T,path::String=makeresultsfolder(desc,steps))
-   # time step in simulation
-   dt=simulator.dt
-
-   # run MD+give run time
-   runtime=@elapsed simulate!(sys, simulator, steps)
-   runtime*=u"s"
-
-   # output all system data: animation, coords, last velocities/forces
-   outputsysinfo(sys,dt,path)
-
-   # output summary of run
-   outputsummary(sys,dt,T,steps,runtime,path)
-end
-
-function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,T,Ei,path::String=makeresultsfolder(desc,steps))
+function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path::String=makeresultsfolder(desc,steps),TEi...)
     # time step in simulation
     dt=simulator.dt
- 
+
     # run MD+give run time
     runtime=@elapsed simulate!(sys, simulator, steps)
     runtime*=u"s"
- 
+
     # output all system data: animation, coords, last velocities/forces
     outputsysinfo(sys,dt,path)
- 
+
     # output summary of run
-    outputsummary(sys,dt,T,Ei,steps,runtime,path)
- end
+    outputsummary(sys,dt,TEi...,steps,runtime,path)
+end
 
 ############################################################################################################
 

@@ -4,26 +4,28 @@
 
 # global settings
 
-# if running on isaac or not
-const isaac=true
-
-### description of NO/Au run. \fix
-const noaurundesc=isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
-
-### description of O/Au run. \fix
-const oaurundesc=isaac ? "O-Au_sc-ISAAC" : "O-Au_sc"
-
 # if debugging, multirun: 1 set T,E,xy
-const debug=false
+const debug=true
 
 # if wanting 1 step only on trajs
-const shortrun=false
+const shortrun=true
 
 # if wanting simple results. no animation, no fv excels, etc. if isaac, true
 const simplerun=true
 
 # if doing a O/Au run
 const runningoau=false
+
+############################################################################################################
+
+# if running on isaac or not
+const isaac = Sys.CPU_NAME!="haswell" # || macbook name
+
+# description of NO/Au run. \fix
+const noaurundesc = isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
+
+# description of O/Au run. \fix
+const oaurundesc = isaac ? "O-Au_sc-ISAAC" : "O-Au_sc"
 
 ############################################################################################################
 
@@ -148,12 +150,10 @@ Aijarray=initAijarray()
 ############################################################################################################
 
 # NO/Au scattering (MD with velocity verlet)
-println("---Running NO/Au scattering---")
 runMultiNOAuTrajectory()
 
 # NO/Au scattering. fixed orientation runs
 if !all(ismissing,no.θorient)
-    println("---Running fixed orientation NO/Au scattering---")
     runMultiNOAuTrajectory(;fixorient=true)
 end
 
