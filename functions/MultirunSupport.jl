@@ -149,6 +149,7 @@ function outputmultirunsummary(t,trajscatter::DataFrame,trajtrap::DataFrame,coun
         println(io,"Debugging?: $debug")
         println(io,"Simulation runtime: $t ($tpertraj/trajectory)")
         println(io)
+        getCPUinfo(io)
         println(io,"Full trajectory details")
         println(io,counttraj)
     end

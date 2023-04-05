@@ -8,7 +8,7 @@
 const runningoau=false
 
 # if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
-debug=false
+debug=true
 
 # if wanting 1 step only on trajs. if isaac, false
 shortrun=true
