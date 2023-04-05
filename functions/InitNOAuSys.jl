@@ -7,9 +7,7 @@ get equilibrated au coords from previous run
 """
 function getEquilAuCoords()
    audir=getAuDirPath("results")
-	readaudir=readdir(audir)
-	i_coords=findfirst(contains.(readaudir,"syscoords.xlsx"))
-	if i_coords isa Int
+	if "syscoords.xlsx" in readdir(audir)
 		coordsfile="$audir/syscoords.xlsx"
 		xfcoord=XLSX.readxlsx(coordsfile)
 		sheets=XLSX.sheetnames(xfcoord)

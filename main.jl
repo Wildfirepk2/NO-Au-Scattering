@@ -4,22 +4,25 @@
 
 # global settings
 
-# if debugging, multirun: 1 set T,E,xy
-const debug=true
+### if doing a O/Au run
+const runningoau=false
 
-# if wanting 1 step only on trajs
-const shortrun=true
+# if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
+debug=false
+
+# if wanting 1 step only on trajs. if isaac, false
+shortrun=true
 
 # if wanting simple results. no animation, no fv excels, etc. if isaac, true
-const simplerun=true
-
-# if doing a O/Au run
-const runningoau=false
+simplerun=true
 
 ############################################################################################################
 
 # if running on isaac or not
-const isaac = Sys.CPU_NAME!="haswell" # || macbook name
+const isaac = Sys.total_memory()/10^9 > 100 # GB
+
+# ensure right isaac settings
+if isaac;debug=false;shortrun=false;simplerun=true;end
 
 # description of NO/Au run. \fix
 const noaurundesc = isaac ? "NO-Au_sc-ISAAC" : "NO-Au_sc"
@@ -154,7 +157,7 @@ runMultiNOAuTrajectory()
 
 # NO/Au scattering. fixed orientation runs
 if !all(ismissing,no.θorient)
-    runMultiNOAuTrajectory(;fixorient=true)
+    runMultiNOAuTrajectory(fixorient=true)
 end
 
 # O/Au scattering

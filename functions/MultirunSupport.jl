@@ -3,15 +3,13 @@
 ############################################################################################################
 
 function getacttraj()
-    traj=param.Ntraj[1]
-    lenT=count(!ismissing,param.T)
-    lenEi=count(!ismissing,no.Et_i)
-    # all(ismissing, no.xi) || all(ismissing, no.yi) ? lenxy=0 : lenxy=count(!ismissing,no.xi)
-    all(ismissing, no.θorient) ? lenorient=0 : lenorient=count(!ismissing,no.θorient)
+    ts=count(!ismissing,param.T)
+    eis=count(!ismissing,no.Et_i)
+    orients=count(!ismissing,no.θorient)
 
-    fac=lenT*lenEi+lenorient*lenEi
-    runningoau ? fac+=lenT*lenEi : fac+=0
-    round(Int64,traj/fac)
+    basetrajs=param.Ntraj[1]
+    fac=(1+runningoau)*ts*eis + eis*orients
+    round(Int64,basetrajs/fac)
 end
 
 ############################################################################################################
@@ -34,9 +32,95 @@ end
 
 ############################################################################################################
 
-function outputmultirunresults(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
-    outputmultirunsummary(trajscatter,trajtrap,runpath)
-    outputtrajinfo(trajscatter,trajtrap,runpath)
+function outputmultirunresults(trajscatter::DataFrame,trajtrap::DataFrame,t,runpath=".")
+    counttraj=analyzetraj(trajscatter,trajtrap)
+    name_sc="traj_scattered"
+    name_tr="traj_trapped"
+    name_an="traj_summary"
+    namevec=[name_sc,name_tr,name_an]
+    dfvec=[trajscatter,trajtrap,counttraj]
+    outputtrajinfo(namevec,dfvec,runpath)
+    outputmultirunsummary(t,trajscatter,trajtrap,counttraj,runpath)
+end
+
+############################################################################################################
+
+"""
+analyze scattered/trapped trajectories
+"""
+function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
+    # handling of empty dataframes. give each same headers
+    if isempty(trajtrap)
+        trajtrap=copy(trajscatter)
+        empty!(trajtrap)
+    elseif isempty(trajscatter)
+        trajscatter=copy(trajtrap)
+        empty!(trajscatter)
+    end
+
+    counttraj=DataFrame()
+    iter=[union(trajscatter.T,trajtrap.T),
+        union(trajscatter.Ei,trajtrap.Ei)]
+    if "θorient" in names(trajtrap)
+        push!(iter,union(trajscatter.θorient,trajtrap.θorient))
+    end
+
+    # iterate through each combination of T,E,(orient)
+    for values in Iterators.product(iter...) # values as tuple
+        valheaders=names(trajtrap)[1:length(values)]
+        valindf=collect(values)'
+        maininfo=DataFrame(valindf,valheaders)
+
+        # filter trajscatter and trajtrap by the current combination of values
+        filtered_trajscatter = filter(row -> all(row[valheaders[i]] == valindf[1, i] for i in 1:length(valheaders)), trajscatter)
+        filtered_trajtrap = filter(row -> all(row[valheaders[i]] == valindf[1, i] for i in 1:length(valheaders)), trajtrap)
+
+        # data for this T, E, (orient)
+        avg_Erot_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
+        nscatter = nrow(filtered_trajscatter)
+        ntrap = nrow(filtered_trajtrap)
+        ntotal = nscatter + ntrap
+        frac_scatter = nscatter / ntotal
+        frac_trap = ntrap / ntotal
+
+        otherinfo=DataFrame(avg_Erot_sc=avg_Erot_sc,
+                            n_scatter=nscatter,
+                            n_trap=ntrap,
+                            n_total=ntotal,
+                            frac_scatter=frac_scatter,
+                            frac_trap=frac_trap)
+        allinfo=hcat(maininfo,otherinfo)
+        append!(counttraj,allinfo)
+    end
+
+    return counttraj
+end
+
+############################################################################################################
+
+"""
+get sys info
+"""
+function getCPUinfo()
+    file="sysinfo.txt"
+    open(file,"w") do io
+        getCPUinfo(io)
+    end
+end
+
+function getCPUinfo(io::IO)
+    ncpus = Sys.CPU_THREADS
+    cpuname = Sys.CPU_NAME
+    nmem = (10^-9)Sys.total_memory() 
+    nworkers = Sys.Threads.nthreads()
+
+    println(io,"CPU info")
+    println(io)
+    println(io,"Processor: $cpuname")
+    println(io,"Number of cores: $ncpus")
+    println(io,"Memory: $nmem GB")
+    println(io,"Julia threads: $nworkers")
+    println(io)
 end
 
 ############################################################################################################
@@ -44,61 +128,28 @@ end
 """
 print txt file with summary of the multiple runs.
 """
-function outputmultirunsummary(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
-    # time of run
+function outputmultirunsummary(t,trajscatter::DataFrame,trajtrap::DataFrame,counttraj::DataFrame=analyzetraj(trajscatter,trajtrap),runpath=".")
+    # data for txt file
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
-
+    it=findfirst(x -> x == "xNf", names(trajscatter))
+    vary=join(names(trajscatter)[1:it-1],", ")
     randomtraj=all(ismissing,no.xi) || all(ismissing,no.yi)
-    vary=""
-    if count(!ismissing,param.T)>1; vary*="T, "; end
-    if count(!ismissing,no.Et_i)>1; vary*="Ei, "; end
-    vary*="xy"
+    ntraj=nrow(trajscatter)+nrow(trajtrap)
+    tpertraj=t/ntraj
 
-    counttraj=DataFrame()
-    if isempty(trajtrap)
-        ts=unique(trajscatter.T)
-        eis=unique(trajscatter.Ei)
-    elseif isempty(trajscatter)
-        ts=unique(trajtrap.T)
-        eis=unique(trajtrap.Ei)
-    else
-        ts=union(trajscatter.T,trajtrap.T)
-        eis=union(trajscatter.Ei,trajtrap.Ei)
-    end
-
-    for T in ts, Ei in eis
-        filtered_trajscatter = filter(row -> row.T == T && row.Ei == Ei, trajscatter)
-        filtered_trajtrap = filter(row -> row.T == T && row.Ei == Ei, trajtrap)
-
-        # data for this T and Ei
-        avg_Erot_sc=isempty(trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
-        nscatter=nrow(filtered_trajscatter)
-        ntrap=nrow(filtered_trajtrap)
-        ntotal=nscatter+ntrap
-        frac_scatter=nscatter/ntotal
-        frac_trap=ntrap/ntotal
-
-        df=DataFrame(T=T,
-                    Ei=Ei,
-                    avg_Erot_sc=avg_Erot_sc,
-                    n_scatter=nscatter,
-                    n_trap=ntrap,
-                    n_total=ntotal,
-                    frac_scatter=frac_scatter,
-                    frac_trap=frac_trap)
-        append!(counttraj,df)
-    end
-    
     file="$runpath/summary.txt"
     open(file,"w") do io
         println(io,"Summary of multiple runs")
         println(io)
         println(io,"Time of run: $daterun")
+        println(io,"Total trajectories: $ntraj")
         println(io,"Variables varied: $vary")
         println(io,"Ran on ISAAC: $isaac")
-        println(io,"Random Trajectories?: $randomtraj")
+        println(io,"Random trajectories?: $randomtraj")
         println(io,"Debugging?: $debug")
+        println(io,"Simulation runtime: $t ($tpertraj/trajectory)")
         println(io)
+        println(io,"Full trajectory details")
         println(io,counttraj)
     end
 end
@@ -108,14 +159,16 @@ end
 """
 print excel files with detailed trajectory info of the multiple runs.
 """
-function outputtrajinfo(trajscatter::DataFrame,trajtrap::DataFrame,runpath=".")
-    if !isempty(trajscatter)
-        name_sc="$runpath/traj_scattered.xlsx"
-        write_xlsx(name_sc,trajscatter)
+function outputtrajinfo(namevec::Vector{String},dfvec::Vector{DataFrame},runpath::String=".")
+    for (name,df) in zip(namevec,dfvec)
+        outputtrajinfo(name,df,runpath)
     end
-    if !isempty(trajtrap)
-        name_tr="$runpath/traj_trapped.xlsx"
-        write_xlsx(name_tr,trajtrap)
+end
+
+function outputtrajinfo(name::String,df::DataFrame,runpath::String=".")
+    if !isempty(df)
+        name="$runpath/$name.xlsx"
+        write_xlsx(name,df)
     end
 end
 
@@ -124,8 +177,7 @@ end
 """
 run post analysis
 """
-function runpostanalysis!(tempt, eit, xt, yt, sys::System,trajscatter::DataFrame,trajtrap::DataFrame)
-    maininfo=DataFrame(T=tempt, Ei=eit, xcom=xt, ycom=yt)
+function runpostanalysis!(maininfo::DataFrame, sys::System,trajscatter::DataFrame,trajtrap::DataFrame)
     Efinfo=finalE_molec(sys)
     allinfo=hcat(maininfo,Efinfo)
     if checkscattering(sys)
@@ -170,7 +222,8 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/orient $orientt/x $xt y $yt")
                 sys=runNOAuTrajectory(x,y,Torient,ei,resultpath;θorient=orient)
-                runpostanalysis!(tempt, eit, xt, yt, sys,trajscatter,trajtrap)
+                df=DataFrame(T=tempt,Ei=eit,θorient=orientt,xcom=xt,ycom=yt)
+                runpostanalysis!(df,sys,trajscatter,trajtrap)
                 if debug; break; end
             end
         else # rand orient
@@ -184,16 +237,18 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
                 sys=runNOAuTrajectory(x,y,temp,ei,resultpath)
-                runpostanalysis!(tempt, eit, xt, yt, sys,trajscatter,trajtrap)
+                df=DataFrame(T=tempt,Ei=eit,xcom=xt,ycom=yt)
+                runpostanalysis!(df,sys,trajscatter,trajtrap)
                 if debug; break; end
             end
         end
-
-        # zip all folders
-        zipfolders(path)
-        outputmultirunresults(trajscatter,trajtrap,path)
     end
     t*=u"s"
+
+    # zip all folders
+    zipfolders(path)
+    outputmultirunresults(trajscatter,trajtrap,t,path)
+    
     println("---NO/Au multiruns complete---")
     println("Total time taken: $t")
     println()
