@@ -204,7 +204,7 @@ function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     cutoff=10u"Å"
     zcom_f=getzcom(mN,mO,rNf,rOf)
 
-    zcom_f>=cutoff ? true : false
+    zcom_f>=cutoff
 end
 
 ############################################################################################################

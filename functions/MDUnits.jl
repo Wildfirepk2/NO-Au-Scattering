@@ -20,7 +20,7 @@ Unitful.register(@__MODULE__)
 @unit f_MD "f_MD" Frequency_MD 1u"100THz" false
 @unit v_MD "v_MD" Velocity_MD 1u"10^4*m/s" false
 @unit e_MD "e_MD" Energy_MD 1u"100kJ/mol" false
-@unit e "e-" Charge_MD 1 false # needed for charge graph compatibility
+@unit e⁻ "e⁻" Charge_MD 1 false # needed for charge graph compatibility
 
 ###########################################################################################
 
@@ -30,9 +30,21 @@ Unitful.register(@__MODULE__)
 """
 map Unitful quantity to label. for making graph labels in outputgraph. may change later.
 """
-function qtytolabel(qty::Unitful.Quantity)
-    types=[Unitful.Mass,Unitful.Length,Unitful.Time,Unitful.Frequency,Unitful.Velocity,EnergyPerMole,Unitful.DimensionlessQuantity]
-    labels=["Mass","Length","Time","Frequency","Velocity","Energy","Charge"]
-    idx=findfirst(isa.(qty,types))
-    labels[idx]
-end
+qtytolabel(qty::Unitful.Mass) = "Mass"
+qtytolabel(qty::Unitful.Length) = "Length"
+qtytolabel(qty::Unitful.Time) = "Time"
+qtytolabel(qty::Unitful.Frequency) = "Frequency"
+qtytolabel(qty::Unitful.Velocity) = "Velocity"
+qtytolabel(qty::EnergyPerMole) = "Energy"
+qtytolabel(qty::Unitful.DimensionlessQuantity) = "Charge"
+
+###########################################################################################
+
+"""get unit label for use in graphs"""
+getgraphunitlabel(qty::Unitful.Mass) = u"u"
+getgraphunitlabel(qty::Unitful.Length) = u"Å"
+getgraphunitlabel(qty::Unitful.Time) = u"fs"
+getgraphunitlabel(qty::Unitful.Frequency) = u"THz"
+getgraphunitlabel(qty::Unitful.Velocity) = u"m/s"
+getgraphunitlabel(qty::EnergyPerMole) = u"kJ/mol"
+getgraphunitlabel(qty::Unitful.DimensionlessQuantity) = u"e⁻"

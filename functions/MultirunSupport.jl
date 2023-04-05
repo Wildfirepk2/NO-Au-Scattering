@@ -147,6 +147,8 @@ function outputmultirunsummary(t,trajscatter::DataFrame,trajtrap::DataFrame,coun
         println(io,"Ran on ISAAC: $isaac")
         println(io,"Random trajectories?: $randomtraj")
         println(io,"Debugging?: $debug")
+        println(io,"Short trajectory?: $shortrun")
+        println(io,"Simple results?: $simplerun")
         println(io,"Simulation runtime: $t ($tpertraj/trajectory)")
         println(io)
         getCPUinfo(io)
@@ -264,6 +266,7 @@ run multiple o/au trajectories and output run info to results folder
 """
 function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc))
     println("---Running O/Au scattering---")
+    println()
     trajtrap=DataFrame()
     trajscatter=DataFrame()
     
@@ -287,18 +290,20 @@ function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc))
             yt=round(ustrip(u"Å",y);digits=3)
             resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
             sys=runOAuTrajectory(x,y,temp,ei,resultpath)
-            runpostanalysis!(tempt, eit, xt, yt, sys,trajscatter,trajtrap)
+            df=DataFrame(T=tempt,Ei=eit,xcom=xt,ycom=yt)
+            runpostanalysis!(df,sys,trajscatter,trajtrap)
             if debug; break; end
         end
-
-        # zip all folders
-        zipfolders(path)
-        outputmultirunresults(trajscatter,trajtrap,path)
     end
     t*=u"s"
+
+    # zip all folders
+    zipfolders(path)
+    outputmultirunresults(trajscatter,trajtrap,t,path)
+
     println("---O/Au multiruns complete---")
     println("Total time taken: $t")
     println()
 
     # return sys # fails
-end  
+end

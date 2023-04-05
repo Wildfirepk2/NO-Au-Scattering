@@ -163,7 +163,7 @@ function checkscattering(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     zOf=s.loggers.coords.history[end][1][3]-maximum(au.z)
     cutoff=10u"Å"
 
-    zOf>=cutoff ? true : false
+    zOf>=cutoff
 end
 
 ############################################################################################################

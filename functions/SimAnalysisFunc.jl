@@ -44,9 +44,9 @@ end
 simple version of write_xlsx for outputing energies. called in outputsysE
 """
 function write_xlsx(file::String, df::DataFrame)
-    dfnounits=ustrip.(df)
-    data = collect(eachcol(dfnounits))
-    cols = names(dfnounits)
+    df=ustrip.(df)
+    data = collect(eachcol(df))
+    cols = names(df)
     XLSX.writetable(file, data, cols)
 end
 
@@ -158,34 +158,42 @@ end
 """
 output graph given DataFrame. called in outputsysE
 """
-function outputgraph(desc,df::DataFrame,path=".")
+function outputgraph(desc,df::DataFrame,path=".";stackplots=false)
     # grabbing key data from df
     colnames=names(df)
     numcols=ncol(df)
-    dffirstrow=first.(eachcol(df))
+    dffirstrow=first.(eachcol(df)) # \fix try eltype later?
     colunittypes=qtytolabel.(dffirstrow)
-    colunits=unit.(dffirstrow)
-    dfnounits=ustrip.(df)
-
-    # create plot obj
+    colunits=getgraphunitlabel.(dffirstrow)
     xunittype=colunittypes[begin]
     yunittype=colunittypes[begin+1]
     xunit=colunits[begin]
     yunit=colunits[begin+1]
-    fig=scatterlines(dfnounits[!,begin],dfnounits[!,begin+1],label=colnames[begin+1];
-        markersize=5,
-        linewidth=0.5,
-        axis = (; title = desc, xlabel = "$xunittype ($xunit)", ylabel = "$yunittype ($yunit)"))
+
+    # convert units then unit strip all df cols
+    for i in eachindex(colunits)
+        df[!,i]=ustrip.(colunits[i],df[!,i])
+    end
+    
+    # create plot objs
+    f = Figure(resolution = (900, 600)) # default 800x600
+    Axis(f[1, 1], title = desc, xlabel = "$xunittype ($xunit)", ylabel = "$yunittype ($yunit)")
+    plotobjs=[]
 
     # add to plot obj
-    for i in 2:numcols-1
-        scatterlines!(dfnounits[!,begin],dfnounits[!,i+1],label=colnames[i+1];markersize=5,linewidth=0.5)
+    if stackplots
+        # \fix
+    else
+        for i in 1:numcols-1
+            obj=scatterlines!(df[!,begin],df[!,i+1],label=colnames[i+1],markersize=5,linewidth=0.5)
+            push!(plotobjs,obj)
+        end
     end
-    axislegend()
-
+    Legend(f[1, 2],plotobjs,colnames[2:end])
+    
     # save plot to $path
-    save("$path/$yunittype v $xunittype.png", fig)
-    return fig
+    save("$path/$yunittype v $xunittype.png", f)
+    return f
 end
 
 ############################################################################################################
@@ -226,7 +234,7 @@ end
 make standalone charge graph
 """
 function outputcharge(sys::System,dt,path=".")
-    charges=sys.loggers.charge.history .|> u"e"
+    charges=sys.loggers.charge.history .|> u"e⁻"
 
     # logging interval. ie log coords after every $stepslog steps
     stepslog=sys.loggers.charge.n_steps

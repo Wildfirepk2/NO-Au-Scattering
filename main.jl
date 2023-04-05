@@ -164,3 +164,6 @@ end
 if runningoau
     runMultiOAuTrajectory()
 end
+
+# #\debug
+# sys=runNOAuTrajectory()
