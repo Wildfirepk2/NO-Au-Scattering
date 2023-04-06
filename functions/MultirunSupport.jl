@@ -59,7 +59,7 @@ function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
     end
 
     # choose no/au or o/au
-    oau = names(trajscatter)[end]=="Etrans"
+    oau = names(trajscatter)[end]=="Etransfer"
 
     counttraj=DataFrame()
     iter=[union(trajscatter.T,trajtrap.T),
@@ -87,7 +87,9 @@ function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
 
         if oau
             avg_Etrans_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Etrans)
-            trackedE=DataFrame(avg_Etrans_sc=avg_Etrans_sc)
+            avg_Etransfer_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Etransfer)
+            trackedE=DataFrame(avg_Etrans_sc=avg_Etrans_sc,
+                                avg_Etransfer_sc=avg_Etransfer_sc)
         else
             avg_Erot_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
             trackedE=DataFrame(avg_Erot_sc=avg_Erot_sc)

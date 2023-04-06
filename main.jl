@@ -8,7 +8,7 @@
 const runningoau=true
 
 # if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
-debug=false
+debug=true
 
 # if wanting 1 step only on trajs. if isaac, false
 shortrun=true
@@ -102,7 +102,7 @@ const steps_dyn_OAu::Int64 = scalefactor>5000 ? 1 : param.Nsteps_dyn_OAu[1]/scal
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
 
-### description of Au run \fix const
+### description of Au run \fix const?
 aurundesc="Au_slab"
 
 # choosing PESs for NO/Au scattering. all true: diabatic PES
@@ -167,3 +167,4 @@ end
 
 # #\debug
 # sys=runNOAuTrajectory()
+# sys=runOAuTrajectory()

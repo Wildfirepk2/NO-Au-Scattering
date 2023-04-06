@@ -169,26 +169,26 @@ end
 ############################################################################################################
 
 function finalE_molec(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{OAuInteraction}})
-    # O mass
+    # grab O data
     mO=s.atoms[1].mass
- 
-    # O last coords
-    finalrO=s.loggers.coords.history[end][1] .|> u"d_MD"
- 
-    # O last velocities
-    finalvO=s.loggers.velocities.history[end][1] .|> u"v_MD"
- 
-    # O final translational energy
-    finalEtrans=0.5*mO*sum(finalvO.^2)*N_A |> u"e_MD"
+    rOf=s.loggers.coords.history[end][1] .|> u"d_MD"
+    vOf=s.loggers.velocities.history[end][1] .|> u"v_MD"
+    vOi=s.loggers.velocities.history[1][1]
+
+    # O energy analysis
+    Etransi=0.5*mO*sum(vOi.^2)*N_A |> u"e_MD"
+    Etransf=0.5*mO*sum(vOf.^2)*N_A |> u"e_MD"
+    Etransfer=Etransi-Etransf
  
     # output final O coord, velocity, energy
     df=DataFrame(
-            xOf=finalrO[1],
-            yOf=finalrO[2],
-            zOf=finalrO[3],
-            vxOf=finalvO[1],
-            vyOf=finalvO[2],
-            vzOf=finalvO[3],
-            Etrans=finalEtrans,)
+            xOf=rOf[1],
+            yOf=rOf[2],
+            zOf=rOf[3],
+            vxOf=vOf[1],
+            vyOf=vOf[2],
+            vzOf=vOf[3],
+            Etrans=Etransf,
+            Etransfer=Etransfer,)
     ustrip.(df)
  end
