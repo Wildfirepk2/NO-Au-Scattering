@@ -182,5 +182,13 @@ function finalE_molec(s::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,P
     finalEtrans=0.5*mO*sum(finalvO.^2)*N_A |> u"e_MD"
  
     # output final O coord, velocity, energy
-    ustrip_vec(vcat(finalrO,finalvO,finalEtrans))
+    df=DataFrame(
+            xOf=finalrO[1],
+            yOf=finalrO[2],
+            zOf=finalrO[3],
+            vxOf=finalvO[1],
+            vyOf=finalvO[2],
+            vzOf=finalvO[3],
+            Etrans=finalEtrans,)
+    ustrip.(df)
  end

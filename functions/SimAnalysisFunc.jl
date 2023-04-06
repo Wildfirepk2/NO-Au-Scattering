@@ -189,7 +189,7 @@ function outputgraph(desc,df::DataFrame,path=".";stackplots=false)
             push!(plotobjs,obj)
         end
     end
-    Legend(f[1, 2],plotobjs,colnames[2:end])
+    if length(plotobjs)>1;Legend(f[1, 2],plotobjs,colnames[2:end]);end
     
     # save plot to $path
     save("$path/$yunittype v $xunittype.png", f)

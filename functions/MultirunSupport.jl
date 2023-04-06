@@ -58,6 +58,9 @@ function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
         empty!(trajscatter)
     end
 
+    # choose no/au or o/au
+    oau = names(trajscatter)[end]=="Etrans"
+
     counttraj=DataFrame()
     iter=[union(trajscatter.T,trajtrap.T),
         union(trajscatter.Ei,trajtrap.Ei)]
@@ -76,20 +79,26 @@ function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
         filtered_trajtrap = filter(row -> all(row[valheaders[i]] == valindf[1, i] for i in 1:length(valheaders)), trajtrap)
 
         # data for this T, E, (orient)
-        avg_Erot_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
         nscatter = nrow(filtered_trajscatter)
         ntrap = nrow(filtered_trajtrap)
         ntotal = nscatter + ntrap
         frac_scatter = nscatter / ntotal
         frac_trap = ntrap / ntotal
 
-        otherinfo=DataFrame(avg_Erot_sc=avg_Erot_sc,
-                            n_scatter=nscatter,
+        if oau
+            avg_Etrans_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Etrans)
+            trackedE=DataFrame(avg_Etrans_sc=avg_Etrans_sc)
+        else
+            avg_Erot_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
+            trackedE=DataFrame(avg_Erot_sc=avg_Erot_sc)
+        end
+
+        otherinfo=DataFrame(n_scatter=nscatter,
                             n_trap=ntrap,
                             n_total=ntotal,
                             frac_scatter=frac_scatter,
                             frac_trap=frac_trap)
-        allinfo=hcat(maininfo,otherinfo)
+        allinfo=hcat(maininfo,trackedE,otherinfo)
         append!(counttraj,allinfo)
     end
 
@@ -131,8 +140,8 @@ print txt file with summary of the multiple runs.
 function outputmultirunsummary(t,trajscatter::DataFrame,trajtrap::DataFrame,counttraj::DataFrame=analyzetraj(trajscatter,trajtrap),runpath=".")
     # data for txt file
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
-    it=findfirst(x -> x == "xNf", names(trajscatter))
-    vary=join(names(trajscatter)[1:it-1],", ")
+    it=findfirst(x -> x == "ycom", names(trajscatter))
+    vary=join(names(trajscatter)[1:it],", ")
     randomtraj=all(ismissing,no.xi) || all(ismissing,no.yi)
     ntraj=nrow(trajscatter)+nrow(trajtrap)
     tpertraj=t/ntraj
@@ -264,7 +273,7 @@ end
 """
 run multiple o/au trajectories and output run info to results folder
 """
-function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc))
+function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc,steps_dyn_OAu))
     println("---Running O/Au scattering---")
     println()
     trajtrap=DataFrame()

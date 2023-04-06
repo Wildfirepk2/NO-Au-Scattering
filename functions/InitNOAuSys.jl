@@ -109,8 +109,8 @@ function initNOVelocities(vrel,u::Vector,Ei=no.Et_i[1])
    # convert incident molecule energy to velocity
    θ=no.θi[1]
 	mass=mt*N_A # now in kg/mol
-	vmag=-sqrt(2*Ei/mass)
-   vcom=SA[vmag*sin(θ),0u"m/s",vmag*cos(θ)]
+	vmag=sqrt(2*Ei/mass)
+   vcom=SA[vmag*sin(θ),0u"m/s",-vmag*cos(θ)] # negative: pointing down
 
    vN=vcom-μ/mN*vrel*u
    vO=vcom+μ/mO*vrel*u

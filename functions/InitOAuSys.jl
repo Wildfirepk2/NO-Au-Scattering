@@ -19,23 +19,20 @@ end
 
 ############################################################################################################
 
-function initOAuVelocities()
-	uv=normalize(SVector{3}(rand(-10:10,3))) # unit vector
-	uvneg=uv[3]<0 ? uv : -uv # downward velocity. moving toward surface
-
-	# convert incident molecule energy to velocity
-	e=no.Et_i[1]
+function initOVelocities(Ei=no.Et_i[1])
+   # convert incident molecule energy to velocity
+   θ=no.θi[1]
 	mass=no.mO[1]*N_A # now in kg/mol
-	v=uvneg*sqrt(2*e/mass)
-	
-	nov=[v,v]
-	auv=[velocity(1u"u", 0u"K") for _ in 1:au.N[1]]
-	vcat(nov,auv)
+	vmag=sqrt(2*Ei/mass)
+   [SA[vmag*sin(θ),0u"m/s",-vmag*cos(θ)]] # negative: pointing down
+end
 
-	# \debugging
-	t=[SA[0u"Å/ps",0u"Å/ps",-sqrt(2*e/mass)]]
-	auvt=getLastAuVelocities()
-	vcat(t,auvt)
+############################################################################################################
+
+function initOAuVelocities(Ei=no.Et_i[1])
+	vo=initOVelocities(Ei)
+   auv=getLastAuVelocities()
+	vcat(vo,auv)
 end
 
 ############################################################################################################
@@ -43,182 +40,53 @@ end
 """
 initiallize O/Au system. O placed at specified x,y position
 """
-function initOAuSys(xOi=au.aPBCx[1]*rand(),yOi=au.aPBCy[1]*rand())
-	# defining MD propagation method (velocity verlet)
-	simul = VelocityVerlet(
-		# Time step
-		dt=param.dt[1],
-
-		# dont remove center of mass motion to keep layer fixed. may revert.
-		remove_CM_motion=false,
-	)
-
-	# defining system
-   if simplerun
-      s = System(
-         # initializing atoms in system
-         atoms=initOAuAtoms(),
-   
-         # system bound by custom O/Au interactions. using neighbor list=true
-         pairwise_inters=(OAuInteraction(true),),
-   
-         # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initOAuCoords(xOi,yOi),
-   
-         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initOAuVelocities(),
-   
-         # system boundary. is periodic in x,y
-         boundary=simboxdims,
-   
-         # using custom neighbor finder
-         neighbor_finder=ONeighborFinder(O_cutoff=PES_GS.AuOcutoff[1],),
-   
-         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn_OAu, default steps: set to actsteplog
-         loggers=(
-            # checking energy conservation AT LAST TIME STEP ONLY. E needs to be calculated before F
-            et=TotalEnergyLogger(steps_dyn_OAu),
-            pe=PotentialEnergyLogger(steps_dyn_OAu),
-            ke=KineticEnergyLogger(steps_dyn_OAu),
-   
-            # capture ONLY velocities at last time step
-            velocities=VelocityLogger(steps_dyn_OAu),
-   
-            # for animation
-            charge=ChargeLogger(actsteplog),
-            coords=CoordinateLogger(actsteplog),
-         ),
-      )
+function initOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
+                     ycom::Unitful.Length=au.aPBCy[1]*rand(),
+                     Ei::EnergyPerMole=no.Et_i[1])
+   # Molly sys params
+   atoms=initOAuAtoms()
+   pairwise_inters=(OAuInteraction(true),) # using neighbor list=true
+   coords=initOAuCoords(xcom,ycom)
+   velocities=initOAuVelocities(Ei) # O vel based on √(2Ei/m). Au slab set to last vels
+   boundary=simboxdims # periodic in x,y
+   neighbor_finder=ONeighborFinder(O_cutoff=PES_GS.AuOcutoff[1],)
+   if simplerun                                
+      loggers=(
+               et=TotalEnergyLogger(steps_dyn), # checking energy conservation AT LAST TIME STEP ONLY
+               pe=PotentialEnergyLogger(steps_dyn),
+               ke=KineticEnergyLogger(steps_dyn),
+               velocities=VelocityLogger(steps_dyn),
+               charge=ChargeLogger(actsteplog),
+               coords=CoordinateLogger(actsteplog),
+               )
    else
-      s = System(
-         # initializing atoms in system
-         atoms=initOAuAtoms(),
-   
-         # system bound by custom O/Au interactions. using neighbor list=true
-         pairwise_inters=(OAuInteraction(true),),
-   
-         # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initOAuCoords(xOi,yOi),
-   
-         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initOAuVelocities(),
-   
-         # system boundary. is periodic in x,y
-         boundary=simboxdims,
-   
-         # using custom neighbor finder
-         neighbor_finder=ONeighborFinder(O_cutoff=PES_GS.AuOcutoff[1],),
-   
-         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn_OAu, default steps: set to actsteplog
-         loggers=(
-            # checking energy conservation. E needs to be calculated before F
-            et=TotalEnergyLogger(actsteplog),
-            pe=PotentialEnergyLogger(actsteplog),
-            ke=KineticEnergyLogger(actsteplog),
-   
-            # capture velocities and forces at last time step
-            velocities=VelocityLogger(steps_dyn_OAu),
-            forces=ForceLogger(steps_dyn_OAu),
-   
-            # for animation
-            charge=ChargeLogger(actsteplog),
-            coords=CoordinateLogger(actsteplog),
-         ),
+      loggers=(
+         et=TotalEnergyLogger(actsteplog), # checking energy conservation 
+         pe=PotentialEnergyLogger(actsteplog),
+         ke=KineticEnergyLogger(actsteplog),
+         velocities=VelocityLogger(steps_dyn),
+         forces=ForceLogger(steps_dyn), # E needs to be calculated before F
+         charge=ChargeLogger(actsteplog),
+         coords=CoordinateLogger(actsteplog),
       )
    end
+   dt=param.dt[1]
+   remove_CM_motion=false # dont remove center of mass motion to keep layer fixed. may revert.
 
-	return s, simul
-end
-
-"""
-REF REF REF REF REF REF REF REF REF REF REF REF REF REF REF REF REF REF 
-"""
-function initOAuSys(x::Unitful.Length=au.aPBCx[1]*rand(),
-                     y::Unitful.Length=au.aPBCy[1]*rand(),
-                     Ei::EnergyPerMole=no.Et_i[1]
-                     )
-	# defining MD propagation method (velocity verlet)
-	simul = VelocityVerlet(
-		# Time step
-		dt=param.dt[1],
-
-		# dont remove center of mass motion to keep layer fixed. may revert.
-		remove_CM_motion=false,
-	)
-
-	# defining system
-   if simplerun
-      s = System(
-         # initializing atoms in system
-         atoms=initOAuAtoms(),
-   
-         # system bound by custom NO/Au interactions. using neighbor list=true
-         pairwise_inters=(OAuInteraction(true),),
-   
-         # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initOAuCoords(x,y),
-   
-         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initOAuVelocities(Ei),
-   
-         # system boundary. is periodic in x,y
-         boundary=simboxdims,
-   
-         # using custom neighbor finder
-         neighbor_finder=ONeighborFinder(O_cutoff=PES_GS.AuOcutoff[1],),
-   
-         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
-         loggers=(
-            # checking energy conservation AT LAST TIME STEP ONLY. E needs to be calculated before F
-            et=TotalEnergyLogger(steps_dyn),
-            pe=PotentialEnergyLogger(steps_dyn),
-            ke=KineticEnergyLogger(steps_dyn),
-   
-            # capture ONLY velocities at last time step
-            velocities=VelocityLogger(steps_dyn),
-   
-            # for animation
-            charge=ChargeLogger(actsteplog),
-            coords=CoordinateLogger(actsteplog),
-         ),
-      )
-   else
-      s = System(
-         # initializing atoms in system
-         atoms=initOAuAtoms(),
-   
-         # system bound by custom NO/Au interactions. using neighbor list=true
-         pairwise_inters=(OAuInteraction(true),),
-   
-         # initial atom coordinates. using static arrays (SA) for Molly compatibility
-         coords=initOAuCoords(x,y),
-   
-         # initial atom velocities. NO vel based on √(2E/m). Au slab set to last vels
-         velocities=initOAuVelocities(),
-   
-         # system boundary. is periodic in x,y
-         boundary=simboxdims,
-   
-         # using custom neighbor finder
-         neighbor_finder=ONeighborFinder(O_cutoff=PES_GS.AuOcutoff[1],),
-   
-         # tracking parameters wrt time. value in parentheses is number of time steps. log at last step: set to steps_dyn, default steps: set to actsteplog
-         loggers=(
-            # checking energy conservation. E needs to be calculated before F
-            et=TotalEnergyLogger(actsteplog),
-            pe=PotentialEnergyLogger(actsteplog),
-            ke=KineticEnergyLogger(actsteplog),
-   
-            # capture velocities and forces at last time step
-            velocities=VelocityLogger(steps_dyn),
-            forces=ForceLogger(steps_dyn),
-   
-            # for animation
-            charge=ChargeLogger(actsteplog),
-            coords=CoordinateLogger(actsteplog),
-         ),
-      )
-   end
+	# defining system/simulator
+   s = System(
+            atoms=atoms,
+            pairwise_inters=pairwise_inters,
+            coords=coords,
+            velocities=velocities,
+            boundary=boundary,
+            neighbor_finder=neighbor_finder,
+            loggers=loggers,
+            )
+   simul = VelocityVerlet(
+                           dt=dt,
+                           remove_CM_motion=remove_CM_motion,
+                        )
 
 	return s, simul
 end
