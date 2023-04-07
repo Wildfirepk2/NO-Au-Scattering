@@ -151,13 +151,16 @@ Aij=initAij()
 Aijarray=initAijarray()
 
 ############################################################################################################
+#\fix
+# collectallresults=makeresultsfolder("results/run") 
+# path=collectallresults
 
 # NO/Au scattering (MD with velocity verlet)
 runMultiNOAuTrajectory()
 
 # NO/Au scattering. fixed orientation runs
 if !all(ismissing,no.θorient)
-    runMultiNOAuTrajectory(fixorient=true)
+    runMultiNOAuTrajectory(fixorient=true,)
 end
 
 # O/Au scattering
@@ -168,3 +171,4 @@ end
 # #\debug
 # sys=runNOAuTrajectory()
 # sys=runOAuTrajectory()
+# runAuSlabEquilibration(force=true)

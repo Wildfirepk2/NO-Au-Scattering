@@ -102,10 +102,13 @@ end
 
 function outputanimation(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},path=".")
     # output animation of simulation in $path
+#\fix z label not showing
+    kwargs = [:show_boundary => false,
+            :color => :gold,]
     if isaac
-        myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
+        myvisualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";kwargs...)
     else
-        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";show_boundary=false)
+        visualize(sys.loggers.coords, sys.boundary, "$path/animation.mp4";kwargs...)
     end
 end
 

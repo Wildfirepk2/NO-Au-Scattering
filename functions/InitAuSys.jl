@@ -307,11 +307,11 @@ end
 ############################################################################################################
 
 """
-run Au slab equilibration and output run info to results folder IF Au slab is not already equilibrated
+run Au slab equilibration and output run info to results folder IF Au slab is not already equilibrated. force flag overrides this behavior
 """
-function runAuSlabEquilibration(T=param.T[1])
+function runAuSlabEquilibration(T=param.T[1];force=false)
     audir=getAuDirPath("results")
-    if audir isa Nothing
+    if audir isa Nothing || force
 		# redefine for Au equilibration
 		global auatomcutoff=397
 
@@ -319,7 +319,7 @@ function runAuSlabEquilibration(T=param.T[1])
 		sys_Au, simulator_Au = initAuSys(T)
 
 		# running MD + output results
-        t=@elapsed runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq, T)
+        t=@elapsed runMDprintresults(sys_Au, aurundesc, simulator_Au, steps_eq, makeresultsfolder(aurundesc,steps_eq), T) # makeresults(): to force dispatch to call right fn.\fix later
 		checkEconserved(sys_Au)
         
 		println("Au slab is equilibrated")

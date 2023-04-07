@@ -126,6 +126,17 @@ function initNOAuVelocities(vrel,u::Vector,Ei=no.Et_i[1])
 end
 
 ############################################################################################################
+#\fix. may remove later
+"""
+helper function: check if au folder exists in directory
+"""
+function checkAuDir(path::String="results")
+    resultsinpath=readdir(path;join=true)
+    i_au=findfirst(contains.(resultsinpath,aurundesc))
+    !(i_au === nothing) # if nothing found, !true=false
+end
+
+############################################################################################################
 
 """
 helper function: get path of au folder in directory. if not found, return nothing

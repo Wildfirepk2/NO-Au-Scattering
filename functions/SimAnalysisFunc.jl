@@ -413,6 +413,12 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
     outputsummary(sys,dt,TEi...,steps,runtime,path)
 end
 
+# #\fix later
+# function runMDprintresults(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,AD,PI<:Tuple{AuSlabInteraction}},desc::String,simulator,steps::Int64,T,path::String=makeresultsfolder(desc,steps))
+#     Ei=NaN
+#     runMDprintresults(sys,desc,simulator,steps,path,T,Ei)
+# end
+
 ############################################################################################################
 
 function checkEconserved(s::System)
