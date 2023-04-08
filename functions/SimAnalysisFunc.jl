@@ -384,13 +384,17 @@ end
 helper function to make folder for results
 """
 function makeresultsfolder(desc::String,steps)
-   date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
-   mkpath("results/$desc-$steps--$date")
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    path=mkpath("results/$desc-$steps--$date")
+    println("Made folder: $path")
+    return path
 end
 
 function makeresultsfolder(desc::String)
     date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
-    mkpath("$desc--$date")
+    path=mkpath("$desc--$date")
+    println("Made folder: $path")
+    return path
  end
 
 ############################################################################################################
@@ -406,6 +410,7 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
     runtime=@elapsed simulate!(sys, simulator, steps)
     runtime*=u"s"
 
+    #\fix. if no au, error: no velocities
     # # output all system data: animation, coords, last velocities/forces
     # outputsysinfo(sys,dt,path)
 
@@ -426,5 +431,5 @@ function checkEconserved(s::System)
     finalE=s.loggers.et.history[end]
     percentdif=abs(initialE-finalE)/initialE
 
-    percentdif<0.01 ? println("Energy conserved") : error("Energy not conserved")
+    percentdif<0.01 ? println("Energy conserved") : error("Energy not conserved. Initial E: $initialE, Final E: $finalE, Percent difference: $percentdif")
 end
