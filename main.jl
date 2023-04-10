@@ -4,6 +4,9 @@
 
 # global settings
 
+### if doing a NO/Au run
+const runningnoau=true
+
 ### if doing a O/Au run
 const runningoau=true
 
@@ -155,13 +158,15 @@ Aijarray=initAijarray()
 # collectallresults=makeresultsfolder("results/run") 
 # path=collectallresults
 
-# # NO/Au scattering (MD with velocity verlet)
-# runMultiNOAuTrajectory()
+# NO/Au scattering (MD with velocity verlet)
+if runningnoau
+    runMultiNOAuTrajectory()
+end
 
-# # NO/Au scattering. fixed orientation runs
-# if !all(ismissing,no.θorient)
-#     runMultiNOAuTrajectory(fixorient=true,)
-# end
+# NO/Au scattering. fixed orientation runs
+if !all(ismissing,no.θorient)
+    runMultiNOAuTrajectory(fixorient=true,)
+end
 
 # O/Au scattering
 if runningoau

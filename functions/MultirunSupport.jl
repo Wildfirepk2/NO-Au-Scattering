@@ -8,8 +8,8 @@ function getacttraj()
     orients=count(!ismissing,no.θorient)
 
     basetrajs=param.Ntraj[1]
-    fac=(1+runningoau)*ts*eis + eis*orients
-    round(Int64,basetrajs/fac)
+    fac=(runningnoau+runningoau)*ts*eis + eis*orients
+    round(basetrajs/fac)
 end
 
 ############################################################################################################
@@ -216,8 +216,8 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
     
     randtraj=all(ismissing, no.xi) || all(ismissing, no.yi)
     if randtraj
-        xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
-        ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(acttraj)]
+        xs=[au.aPBCx[1]*rand() for _ in 1:acttraj]
+        ys=[au.aPBCy[1]*rand() for _ in 1:acttraj]
     else # specified trajectories
         xs=skipmissing(no.xi)
         ys=skipmissing(no.yi)
@@ -283,8 +283,8 @@ function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc,steps_
     
     randtraj=all(ismissing, no.xi) || all(ismissing, no.yi)
     if randtraj
-        xs=[au.aPBCx[1]*rand() for _ in Base.OneTo(acttraj)]
-        ys=[au.aPBCy[1]*rand() for _ in Base.OneTo(acttraj)]
+        xs=[au.aPBCx[1]*rand() for _ in 1:acttraj]
+        ys=[au.aPBCy[1]*rand() for _ in 1:acttraj]
     else # specified trajectories
         xs=skipmissing(no.xi)
         ys=skipmissing(no.yi)
