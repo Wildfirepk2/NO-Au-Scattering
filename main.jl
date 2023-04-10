@@ -155,13 +155,13 @@ Aijarray=initAijarray()
 # collectallresults=makeresultsfolder("results/run") 
 # path=collectallresults
 
-# NO/Au scattering (MD with velocity verlet)
-runMultiNOAuTrajectory()
+# # NO/Au scattering (MD with velocity verlet)
+# runMultiNOAuTrajectory()
 
-# NO/Au scattering. fixed orientation runs
-if !all(ismissing,no.θorient)
-    runMultiNOAuTrajectory(fixorient=true,)
-end
+# # NO/Au scattering. fixed orientation runs
+# if !all(ismissing,no.θorient)
+#     runMultiNOAuTrajectory(fixorient=true,)
+# end
 
 # O/Au scattering
 if runningoau
