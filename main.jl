@@ -5,7 +5,7 @@
 # global settings
 
 ### if doing a NO/Au run
-const runningnoau=true
+const runningnoau=false
 
 ### if doing a O/Au run
 const runningoau=true
