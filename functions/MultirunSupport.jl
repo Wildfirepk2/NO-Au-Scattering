@@ -230,7 +230,7 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
             runAuSlabEquilibration(Torient)
 
             for ei in skipmissing(no.Et_i), orient in skipmissing(no.θorient), (x,y) in zip(xs,ys)
-                eit=round(ustrip(u"e_MD",ei);digits=2)
+                eit=round(ustrip(u"e_MD",ei);digits=3)
                 orientt=Int64(ustrip(u"°",orient))
                 xt=round(ustrip(u"Å",x);digits=3)
                 yt=round(ustrip(u"Å",y);digits=3)
@@ -246,7 +246,7 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 global aurundesc="Au_slab-T_$tempt"
                 runAuSlabEquilibration(temp)
                 
-                eit=round(ustrip(u"e_MD",ei);digits=2)
+                eit=round(ustrip(u"e_MD",ei);digits=3)
                 xt=round(ustrip(u"Å",x);digits=3)
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
@@ -296,7 +296,7 @@ function runMultiOAuTrajectory(;path::String=makeresultsfolder(oaurundesc,steps_
             global aurundesc="Au_slab-T_$tempt"
             runAuSlabEquilibration(temp)
             
-            eit=round(ustrip(u"e_MD",ei);digits=2)
+            eit=round(ustrip(u"e_MD",ei);digits=3)
             xt=round(ustrip(u"Å",x);digits=3)
             yt=round(ustrip(u"Å",y);digits=3)
             resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
