@@ -384,14 +384,14 @@ end
 helper function to make folder for results
 """
 function makeresultsfolder(desc::String,steps)
-    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS-sss")
     path=mkpath("results/$desc-$steps--$date")
     println("Made folder: $path")
     return path
 end
 
 function makeresultsfolder(desc::String)
-    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS")
+    date=Dates.format(now(), "yyyy-mm-ddTHHMMSS-sss")
     path=mkpath("$desc--$date")
     println("Made folder: $path")
     return path

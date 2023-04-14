@@ -86,12 +86,12 @@ function analyzetraj(trajscatter::DataFrame,trajtrap::DataFrame)
         frac_trap = ntrap / ntotal
 
         if oau
-            avg_Etrans_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Etrans)
-            avg_Etransfer_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Etransfer)
+            avg_Etrans_sc = isempty(filtered_trajscatter) ? 0 : mean(filtered_trajscatter.Etrans)
+            avg_Etransfer_sc = isempty(filtered_trajscatter) ? 0 : mean(filtered_trajscatter.Etransfer)
             trackedE=DataFrame(avg_Etrans_sc=avg_Etrans_sc,
                                 avg_Etransfer_sc=avg_Etransfer_sc)
         else
-            avg_Erot_sc = isempty(filtered_trajscatter) ? NaN : mean(filtered_trajscatter.Erot)
+            avg_Erot_sc = isempty(filtered_trajscatter) ? 0 : mean(filtered_trajscatter.Erot)
             trackedE=DataFrame(avg_Erot_sc=avg_Erot_sc)
         end
 
