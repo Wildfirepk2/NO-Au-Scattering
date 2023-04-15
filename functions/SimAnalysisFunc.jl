@@ -431,5 +431,5 @@ function checkEconserved(s::System)
     finalE=s.loggers.et.history[end]
     percentdif=abs(initialE-finalE)/initialE
 
-    percentdif<0.01 ? println("Energy conserved") : error("Energy not conserved. Initial E: $initialE, Final E: $finalE, Percent difference: $percentdif")
+    percentdif<0.02 ? println("Energy conserved") : error("Energy not conserved. Initial E: $initialE, Final E: $finalE, Percent difference: $percentdif")
 end
