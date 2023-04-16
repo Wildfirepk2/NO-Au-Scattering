@@ -1,5 +1,5 @@
 # Define directory path
-dir_path = "test_combine_excel"
+dir_path = "~/scratch/NO-Au-results/run-4-13"
 
 ############################################################################################################
 
@@ -63,8 +63,10 @@ t=@elapsed begin
                 data = DataFrame(XLSX.readtable(target_file, 1))
                 append!(df_type, data)
             end
-            # break
         end
+
+        # if df_type still empty (no folders w 1 of the folder names), skip to next iteration
+        if isempty(df_type); continue; end
 
         # find index of column name containing "avg"
         it = findfirst(x -> occursin(r"avg", x), names(df_type))
