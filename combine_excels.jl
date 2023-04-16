@@ -1,5 +1,5 @@
 # Define directory path
-dir_path = "~/scratch/NO-Au-results/run-4-13"
+dir_path = expanduser("~/scratch/NO-Au-results/run-4-13")
 
 ############################################################################################################
 
