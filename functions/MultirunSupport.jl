@@ -143,8 +143,14 @@ print txt file with summary of the multiple runs.
 function outputmultirunsummary(t,trajscatter::DataFrame,trajtrap::DataFrame,counttraj::DataFrame=analyzetraj(trajscatter,trajtrap),runpath=".")
     # data for txt file
     daterun=Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
-    it=findfirst(x -> x == "ycom", names(trajscatter))
-    vary=join(names(trajscatter)[1:it],", ")
+    if isempty(trajtrap)
+        it=findfirst(x -> x == "ycom", names(trajscatter))
+        vary=join(names(trajscatter)[1:it],", ")
+    else
+        it=findfirst(x -> x == "ycom", names(trajtrap))
+        vary=join(names(trajtrap)[1:it],", ")
+    end
+    
     randomtraj=all(ismissing,no.xi) || all(ismissing,no.yi)
     ntraj=nrow(trajscatter)+nrow(trajtrap)
     tpertraj=t/ntraj
