@@ -1,2 +1,2 @@
 ﻿Ntraj,T,dt,Nsteps_eq,Nsteps_dyn,Nsteps_dyn_OAu
-1,300,0.1,500,15000,10000
+1,300,0.1,5000,15000,10000
