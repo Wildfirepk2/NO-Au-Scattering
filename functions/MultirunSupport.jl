@@ -6,10 +6,11 @@ function getacttraj()
     ts=count(!ismissing,param.T)
     eis=count(!ismissing,no.Et_i)
     orients=count(!ismissing,no.θorient)
+    vibs=count(!ismissing,no.vib_phase)
 
     basetrajs=param.Ntraj[1]
-    fac=(runningnoau+runningoau)*ts*eis + eis*orients
-    round(basetrajs/fac)
+    fac=(runningnoau+runningoau)*ts*eis + (orients+vibs)*eis
+    fac>basetrajs ? 1 : round(basetrajs/fac)
 end
 
 ############################################################################################################
@@ -207,9 +208,11 @@ end
 run multiple no/au trajectories and output run info to results folder
 """
 function runMultiNOAuTrajectory(;fixorient::Bool=false,
+                                    fixvib::Bool=false,#\fix
                                     path::String=makeresultsfolder(noaurundesc,fixorient ? "fixorient" : "normalrun")
                                     )
-    fixorient ? println("---Running fixed orientation NO/Au scattering---") : println("---Running NO/Au scattering---")
+    println("---Running NO/Au scattering---")
+    println("fixorient = $fixorient, fixvib = $fixvib")
     println()
     trajtrap=DataFrame()
     trajscatter=DataFrame()
@@ -235,7 +238,7 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 xt=round(ustrip(u"Å",x);digits=3)
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/orient $orientt/x $xt y $yt")
-                sys=runNOAuTrajectory(x,y,Torient,ei,resultpath;θorient=orient)
+                sys=runNOAuTrajectory(x,y,Torient,ei,resultpath;θorient=orient,fixvib=fixvib)
                 df=DataFrame(T=tempt,Ei=eit,θorient=orientt,xcom=xt,ycom=yt)
                 runpostanalysis!(df,sys,trajscatter,trajtrap)
                 if debug; break; end
@@ -250,7 +253,7 @@ function runMultiNOAuTrajectory(;fixorient::Bool=false,
                 xt=round(ustrip(u"Å",x);digits=3)
                 yt=round(ustrip(u"Å",y);digits=3)
                 resultpath=makeresultsfolder("$path/T $tempt/Ei $eit/x $xt y $yt")
-                sys=runNOAuTrajectory(x,y,temp,ei,resultpath)
+                sys=runNOAuTrajectory(x,y,temp,ei,resultpath;fixvib=fixvib)
                 df=DataFrame(T=tempt,Ei=eit,xcom=xt,ycom=yt)
                 runpostanalysis!(df,sys,trajscatter,trajtrap)
                 if debug; break; end

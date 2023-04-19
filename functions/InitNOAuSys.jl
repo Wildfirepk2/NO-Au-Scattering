@@ -41,8 +41,8 @@ end
 ############################################################################################################
 
 """initial NO bond length/vib velocity"""
-function getrvNO()
-    idx=rand(1:length(no.r))
+function getrvNO(fixvib::Bool=false)
+    idx=fixvib ? no.vib_phase[1]+1 : rand(1:length(no.r))
     r=no.r[idx]
     v=no.v[idx]
     return r,v
@@ -154,10 +154,11 @@ initiallize NO/Au system. NO placed at specified x,y position
 """
 function initNOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
                        ycom::Unitful.Length=au.aPBCy[1]*rand(),
-                       Ei::EnergyPerMole=no.Et_i[1],
-                       θorient=nothing)
+                       Ei::EnergyPerMole=no.Et_i[1];
+                       θorient=nothing,
+                       fixvib::Bool=false,)
     # initial NO BL/vib vel
-    rNOi,vrel=getrvNO()
+    rNOi,vrel=getrvNO(fixvib)
 
     # initial NO orientation
     u = θorient===nothing ? getNOorient() : getNOorient(θorient)
@@ -223,8 +224,10 @@ function runNOAuTrajectory(xcom::Unitful.Length=au.aPBCx[1]*rand(),
                              T::Unitful.Temperature=param.T[1],
                              Ei::EnergyPerMole=no.Et_i[1],
                              path::String=makeresultsfolder(noaurundesc,steps_dyn);
-                             θorient=nothing)
-    sys_NOAu, simulator_NOAu = initNOAuSys(xcom, ycom, Ei, θorient)
+                             θorient=nothing,
+                             fixvib=false,
+                             )
+    sys_NOAu, simulator_NOAu = initNOAuSys(xcom, ycom, Ei; θorient=θorient, fixvib=fixvib)
     println("Conditions: T=$T, Ei=$Ei, θorient=$θorient, xcom=$xcom, ycom=$ycom")
 
     t=@elapsed runMDprintresults(sys_NOAu, noaurundesc, simulator_NOAu, steps_dyn, path, T, Ei)

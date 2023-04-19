@@ -5,7 +5,7 @@
 # global settings
 
 ### if doing a NO/Au run
-const runningnoau=true
+const runningnoau=false
 
 ### if doing a O/Au run
 const runningoau=false
@@ -88,19 +88,14 @@ virtboxdims=CubicBoundary(au.aPBCx[1], au.aPBCy[1], au.aPBCz[1])
 # log parameters after n steps. may put in param var
 const stepslogging=10
 
-### scale down factor on steps for debugging. f=1 -> no scaling.
-# au: f=500 -> 1 step
-# no/au: f=1e4 -> 1 step
-scalefactor = shortrun ? 1e4 : 1
+# actual steps for au equilibration
+const steps_eq::Int64 = shortrun ? 1 : param.Nsteps_eq[1]
 
-# actual steps for au equilibration. maybe edit later to always be divisable by 10
-const steps_eq::Int64 = scalefactor>5000 ? 1 : param.Nsteps_eq[1]/scalefactor
+# actual steps for no/au scattering
+const steps_dyn::Int64= shortrun ? 1 : param.Nsteps_dyn[1]
 
-# actual steps for no/au scattering. maybe edit later to always be divisable by 10
-const steps_dyn::Int64=param.Nsteps_dyn[1]/scalefactor
-
-# actual steps for o/au scattering. maybe edit later to always be divisable by 10
-const steps_dyn_OAu::Int64 = scalefactor>5000 ? 1 : param.Nsteps_dyn_OAu[1]/scalefactor
+# actual steps for o/au scattering
+const steps_dyn_OAu::Int64 = shortrun ? 1 : param.Nsteps_dyn_OAu[1]
 
 # actual steps for logging. small number of actual steps: log every step. otherwise use default step log value
 const actsteplog = steps_eq<=100 ? 1 : stepslogging
@@ -163,9 +158,14 @@ if runningnoau
     runMultiNOAuTrajectory()
 end
 
-# NO/Au scattering. fixed orientation runs
-if !all(ismissing,no.θorient)
-    runMultiNOAuTrajectory(fixorient=true,)
+# # NO/Au scattering. fixed orientation runs
+# if !all(ismissing,no.θorient)
+#     runMultiNOAuTrajectory(fixorient=true,)
+# end
+
+# NO/Au scattering. fixed vib phase runs
+if !all(ismissing,no.vib_phase)
+    runMultiNOAuTrajectory(fixorient=true,fixvib=true,)
 end
 
 # O/Au scattering

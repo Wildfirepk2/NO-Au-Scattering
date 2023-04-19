@@ -4,7 +4,6 @@ const dir_path = expanduser("~/OneDrive - University of Tennessee/graduate/roy r
 
 using XLSX
 using DataFrames
-using LinearAlgebra
 using Unitful
 using GLMakie
 using Dates
