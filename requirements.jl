@@ -1,26 +1,20 @@
 import Pkg;
 
-dependencies = [# for Au slab
-                "NearestNeighbors", 
-                "LinearAlgebra", 
-
-                # read/write files
-                "DataFrames", 
-                "CSV", 
-                "XLSX",
-
-                # unit integration
-                "Unitful",
-		"PhysicalConstants",
-
-                # GPU integration
+dependencies = [
+                "CSV",
                 "CUDA",
-
-                # MD
+                "CairoMakie",
+                "DataFrames",
+                "Distances",
+                "GLMakie",
+                "LinearAlgebra",
                 "Molly",
-		"GLMakie",
-		"CairoMakie",
-		"Distances",
+                "NearestNeighbors",
+                "PhysicalConstants",
+                "StatsBase",
+                "Unitful",
+                "XLSX",
                 ]
 
 Pkg.add(dependencies)
+Pkg.update()
