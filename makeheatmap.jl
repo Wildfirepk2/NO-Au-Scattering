@@ -1,6 +1,10 @@
 # Define directory path
 dir_path = expanduser("~/scratch/NO-Au-results/runs--4-5")
 # dir_path = expanduser("~/Downloads/test_combine_excel")
+nbin=30
+interpolate=false
+transparancy_fac=0.7
+# transparancy_fac=count(!isempty, dfvec)==1 ? 0.7 : 0.45 # may \fix
 curdir=pwd()
 
 ############################################################################################################
@@ -83,43 +87,38 @@ function makeresultsfolder(desc::String)
     return path
 end
 
-function outputgraph(dfvec,systype,temp,orient)
-    # get au top layer xy coords
-    df_au=getfilteredAu(temp)
-
-    # plot au coords
-    f = Figure(resolution = (800, 600))
-    ax=Axis(f[1,1],xlabel="x (Å)",ylabel="y (Å)")
+function outputgraph!(f,i,dfvec,systype,temp,orient)
+    # fig setup
+    title=contains(systype,"fix") ? "θ = $(orient)°" : "T = $temp K"
     xylim=[(-1.5, 34),(-0.5, 30.5)]#\fix. unknown error giving ax limits as (0,10). happens only if fig gen in loop
-    limits!(ax,xylim...)
-    scatter!(df_au.x,df_au.y,
-            color=:gold,
-            markersize=50,
-            )
-
-    # overlay heatmap
-    nbin=30
     xyedge=Tuple(range(xy...,nbin) for xy in xylim)
     colors=[:Reds, :Blues]
     colorbarlabels=["Scattered", "Trapped"]
-    transparancy_fac=count(!isempty, dfvec)==1 ? 0.7 : 0.45 # may \fix
     # figobjs=[]
-    for (df,color,label) in zip(dfvec,colors,colorbarlabels)
-        if !isempty(df)
-            h = fit(Histogram, (df.x,df.y),xyedge)
+
+    for (j,color,label) in zip(eachindex(dfvec),colors,colorbarlabels)
+        if !isempty(dfvec[j])
+            # setup fig
+            ax=Axis(f[i,2j-1],xlabel="x (Å)",ylabel="y (Å)",title=title)
+            limits!(ax,xylim...)
+
+            # plot au coords
+            df_au=getfilteredAu(temp)
+            scatter!(df_au.x,df_au.y,
+                    color=:gold,
+                    markersize=50,
+                    )
+            # overlay heatmap
+            h = fit(Histogram, (dfvec[j].x,dfvec[j].y),xyedge)
             hm=heatmap!(h,
                     colormap=(color,transparancy_fac),
-                    interpolate=false,
+                    interpolate=interpolate,
                     # label=label,
                     # transparency = true,
                     )
-            Colorbar(f[:, end+1], hm, label=label,)
+            Colorbar(f[i, 2j], hm, label=label,)
         end
     end
-
-    # save fig
-    var=contains(systype,"fix") ? "θ$orient" : "T$temp"
-    save("$path/heatmap-$systype-$var.png",f)
 end
  
 xlims(ax::Axis=current_axis()) =
@@ -150,30 +149,41 @@ t=@elapsed begin
     path=makeresultsfolder("heatmaps")
     # for (folderv,dfv) in zip(filtered_folders,dftraj), folder in folderv, (df,file) in zip(dfv,file_names)#\old
     # iterate through each sys type, then each T OR orient
-    for (systype,folderv) in zip(systypes,filtered_folders), (t,orient) in zip(ts,orients)
-        # container for systype-T/orient combo
-        dfvec=[DataFrame() for _ in file_names]
-        # iterate through each folder corresponding to systype, then each type of file: tr and sc
-        for folder in folderv, (df,file) in zip(dfvec,file_names)
-            # add to corresponding df in dfvec
-            target_file = folder*"/"*file
-            if isfile(target_file)
-                data = DataFrame(XLSX.readtable(target_file, 1))
-                filtered_data=filtertrajxy(data,t,orient)
-                append!(df,filtered_data)
+    for (systype,folderv) in zip(systypes,filtered_folders)
+        f = Figure(resolution = (1600, 2000))
+        i=1 # counter for fig row position
+        
+        for (t,orient) in zip(ts,orients)
+            # container for systype-T/orient combo
+            dfvec=[DataFrame() for _ in file_names]
+
+            # iterate through each folder corresponding to systype, then each type of file: tr and sc
+            for folder in folderv, (df,file) in zip(dfvec,file_names)
+                # add to corresponding df in dfvec
+                target_file = folder*"/"*file
+                if isfile(target_file)
+                    data = DataFrame(XLSX.readtable(target_file, 1))
+                    filtered_data=filtertrajxy(data,t,orient)
+                    append!(df,filtered_data)
+                end
             end
+
+            # write each T/orient combo to figure
+            try
+                outputgraph!(f,i,dfvec,systype,t,orient)
+                # break
+            catch e
+                cd(curdir)
+                error("Error occurred: $e")
+            end
+            i+=1
+            # # save dfvec to file
+            # for i in eachindex(dfvec)
+            #     CSV.write("$path/$systype-$(filetypes[i])-T$t-θ$orient.csv",dfvec[i])
+            # end
         end
-        try
-            outputgraph(dfvec,systype,t,orient)
-            # break
-        catch e
-            cd(curdir)
-            error("Error occurred: $e")
-        end
-        # # save dfvec to file
-        # for i in eachindex(dfvec)
-        #     CSV.write("$path/$systype-$(filetypes[i])-T$t-θ$orient.csv",dfvec[i])
-        # end
+        # save fig
+        save("$path/heatmap-$systype.png",f)
     end
     cd(curdir)
 end
