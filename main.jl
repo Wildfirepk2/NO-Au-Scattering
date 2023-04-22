@@ -5,7 +5,7 @@
 # global settings
 
 ### if doing a NO/Au run
-const runningnoau=false
+const runningnoau=true
 
 ### if doing a O/Au run
 const runningoau=false
@@ -158,10 +158,10 @@ if runningnoau
     runMultiNOAuTrajectory()
 end
 
-# # NO/Au scattering. fixed orientation runs
-# if !all(ismissing,no.θorient)
-#     runMultiNOAuTrajectory(fixorient=true,)
-# end
+# NO/Au scattering. fixed orientation runs
+if !all(ismissing,no.θorient)
+    runMultiNOAuTrajectory(fixorient=true,)
+end
 
 # NO/Au scattering. fixed vib phase runs
 if !all(ismissing,no.vib_phase)

@@ -410,9 +410,9 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
     runtime=@elapsed simulate!(sys, simulator, steps)
     runtime*=u"s"
 
-    #\fix. if no au, error: no velocities
-    # output all system data: animation, coords, last velocities/forces
-    outputsysinfo(sys,dt,path)
+    # #\fix. if no au, error: no velocities
+    # # output all system data: animation, coords, last velocities/forces
+    # outputsysinfo(sys,dt,path)
 
     # output summary of run
     outputsummary(sys,dt,TEi...,steps,runtime,path)
