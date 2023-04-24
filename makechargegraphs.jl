@@ -40,7 +40,7 @@ t=@elapsed begin
     filt_files_type = [[filter(x -> contains(x, name), ffs) for name in trajtypes] for ffs in filt_files_sys]
 
     ts=[300, 400, 500]
-    legendlabels=["T = $t K" for t in ts]
+    legendlabels=["$t K" for t in ts]
     plot_kwargs = [:markersize => 5, :linewidth => 0.5]
 
     path=makeresultsfolder("charge_graphs")
