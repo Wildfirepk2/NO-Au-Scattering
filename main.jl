@@ -11,13 +11,13 @@ const runningnoau=false
 const runningoau=false
 
 # if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
-debug=false
+debug=true
 
 # if wanting 1 step only on trajs. if isaac, false
-shortrun=false
+shortrun=true
 
 # if wanting simple results. no animation, no fv excels, etc. if isaac, true
-simplerun=false
+simplerun=true
 
 ############################################################################################################
 
@@ -109,7 +109,7 @@ const ionic_PES_active=true
 const coupled_PES_active=true
 
 # temp to test NO orientations
-const Torient=500u"K"
+const Torient=300u"K"
 
 # actual no of trajectories
 acttraj=getacttraj()
@@ -158,15 +158,15 @@ if runningnoau
     runMultiNOAuTrajectory()
 end
 
-# # NO/Au scattering. fixed orientation runs
-# if !all(ismissing,no.θorient)
-#     runMultiNOAuTrajectory(fixorient=true,)
-# end
-
-# NO/Au scattering. fixed vib phase runs
-if !all(ismissing,no.vib_phase)
-    runMultiNOAuTrajectory(fixorient=true,fixvib=true,)
+# NO/Au scattering. fixed orientation runs
+if !all(ismissing,no.θorient)
+    runMultiNOAuTrajectory(fixorient=true,)
 end
+
+# # NO/Au scattering. fixed vib phase runs
+# if !all(ismissing,no.vib_phase)
+#     runMultiNOAuTrajectory(fixorient=true,fixvib=true,)
+# end
 
 # O/Au scattering
 if runningoau
