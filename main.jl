@@ -5,10 +5,10 @@
 # global settings
 
 ### if doing a NO/Au run
-const runningnoau=true
+const runningnoau=false
 
 ### if doing a O/Au run
-const runningoau=false
+const runningoau=true
 
 # if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
 debug=false
