@@ -298,6 +298,8 @@ function initAuSys(T=param.T[1])
 
 			# for animation
 			coords=CoordinateLogger(actsteplog),
+			
+			temp=TemperatureLogger(actsteplog),
 		),
 	)
 

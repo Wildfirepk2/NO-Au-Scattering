@@ -305,6 +305,37 @@ end
 ############################################################################################################
 
 """
+output system temps w time to excel file + make graph
+"""
+function outputsysT(sys,dt,path=".")
+    # logging interval. ie log temps after every $stepslog steps
+    stepslog=sys.loggers.temp.n_steps
+
+    # number of logs
+    nsteps=length(sys.loggers.temp.history)
+
+    # time between logs
+    dtlog=stepslog*dt
+
+    # tmp vars for time, kinetic, potential, and total energies + converted to MD units
+    time=[(i-1)*dtlog for i in 1:nsteps] .|> u"t_MD" # i-1 because first log is at step 0
+    T=sys.loggers.temp.history .|> u"T_MD"
+    
+    # write to excel file at $path
+    data=DataFrame(t=time,T=T)
+    file="$path/sysT.xlsx"
+    write_xlsx(file,data)
+
+    # make energy vs time graph
+    graphdesc = "" #\fix
+
+    # make energy vs time graph
+    outputgraph(graphdesc,data,path)
+end
+
+############################################################################################################
+
+"""
 output atom forces at ith logging point to excel file. default path is current directory. used only in outputallsysforces but can be called independently
 """
 function outputsysforces(sys,dt,i,path=".")
@@ -410,9 +441,9 @@ function runMDprintresults(sys::System,desc::String,simulator,steps::Int64,path:
     runtime=@elapsed simulate!(sys, simulator, steps)
     runtime*=u"s"
 
-    # #\fix. if no au, error: no velocities
-    # # output all system data: animation, coords, last velocities/forces
-    # outputsysinfo(sys,dt,path)
+    #\fix. if no au, error: no velocities
+    # output all system data: animation, coords, last velocities/forces
+    outputsysinfo(sys,dt,path)
 
     # output summary of run
     outputsummary(sys,dt,TEi...,steps,runtime,path)

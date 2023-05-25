@@ -11,13 +11,13 @@ const runningnoau=false
 const runningoau=false
 
 # if debugging, multirun: 1 set varied params (T,E,orient,xy). if isaac, false
-debug=true
+debug=false
 
 # if wanting 1 step only on trajs. if isaac, false
-shortrun=true
+shortrun=false
 
 # if wanting simple results. no animation, no fv excels, etc. if isaac, true
-simplerun=true
+simplerun=false
 
 ############################################################################################################
 

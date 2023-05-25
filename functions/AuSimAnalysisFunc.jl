@@ -122,6 +122,7 @@ function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
         outputallsyscoords(sys,dt,path)
     end
     outputallsysvelocities(sys,dt,path)
+    outputsysT(sys,dt,path)
     if !simplerun
         outputanimation(sys,path)
         outputsysE(sys,dt,path)
