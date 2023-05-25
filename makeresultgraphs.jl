@@ -33,7 +33,7 @@ function initdffromxlsx(filename::String)
     return df
 end
 
-function outputgraph(mydf::DataFrame, expdf::DataFrame, xvar::String, comp::String, path::String=makeresultsfolder("roy plots"))
+function outputgraph(mydf::DataFrame, expdf::DataFrame, xvar::String, comp::String, sd_comp::String, path::String=makeresultsfolder("roy plots"))
     systype=dfnamesdict[mydf]
     if "T" in names(mydf)
         # tr or Er: first filter mydf for rows where T == Texp
@@ -56,7 +56,11 @@ function outputgraph(mydf::DataFrame, expdf::DataFrame, xvar::String, comp::Stri
     for df in dfvec
         xs=ustrip.(df[!,xvar])
         ys=ustrip.(df[!,comp])
+        y_err=ustrip.(df[!,sd_comp])
         obj=scatterlines!(xs,ys;plot_kwargs...)
+        errorbars!(xs, ys, y_err,
+                    whiskerwidth = 10,
+                    )
         push!(plotobjs,obj)
     end
     Legend(f[1, 2],plotobjs,legendlabels)
@@ -166,11 +170,12 @@ t=@elapsed begin
     dfvec_roy=[noau_norm_df,charge_df]
     dfveccomp_roy=[noau_norm_exp_df,charge_exp_df]
     compares=["avg_Erot_sc", "frac_trap", "Charge"]
+    sd_compares=["Erot_SD", "trap_SD", ""]
     xvars=["Ei", "t"]
     path=makeresultsfolder("roy plots")
-    for df in dfvec_roy, dfcomp in dfveccomp_roy, compare in compares, xvar in xvars
+    for df in dfvec_roy, dfcomp in dfveccomp_roy, (compare,sd_comp) in zip(compares,sd_compares), xvar in xvars
         if all([xvar in names(df), compare in names(df), xvar in names(dfcomp), compare in names(dfcomp)])
-            outputgraph(df, dfcomp, xvar, compare, path)
+            outputgraph(df, dfcomp, xvar, compare, sd_comp, path)
         end
         # break
     end
