@@ -149,6 +149,7 @@ function outputsysinfo(sys::System{D, false, T, CU, A, AD, PI} where {D,T,CU,A,A
     # outputzcoordvscharge(sys,dt,1,path)
     outputcharge(sys,dt,path)
     outputallatomizcoords(sys,dt,1,path)
+    outputsysT(sys,dt,path)
     if !simplerun
         outputanimation(sys,path)
         outputsysE(sys,dt,path)

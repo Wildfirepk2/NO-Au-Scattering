@@ -58,6 +58,7 @@ function initOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
                     velocities=VelocityLogger(steps_dyn),
                     charge=ChargeLogger(actsteplog),
                     coords=CoordinateLogger(actsteplog),
+                    temp=TemperatureLogger(actsteplog),
                     )
     else
         loggers=(
@@ -68,6 +69,7 @@ function initOAuSys(xcom::Unitful.Length=au.aPBCx[1]*rand(),
             forces=ForceLogger(steps_dyn), # E needs to be calculated before F
             charge=ChargeLogger(actsteplog),
             coords=CoordinateLogger(actsteplog),
+            temp=TemperatureLogger(actsteplog),
         )
     end
     dt=param.dt[1]
