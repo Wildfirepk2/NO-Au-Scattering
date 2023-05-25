@@ -75,7 +75,7 @@ t=@elapsed begin
                         filtered_df = filter(row -> all(row[key] == value for (key, value) in dict), scdata)
     
                         # calc std dev of $ecolname
-                        erot_SD = std(filtered_df[!,ecolname])
+                        erot_SD = std(Float64.(filtered_df[!,ecolname]))
                         ecolname_SD = ecolname*"_SD"
     
                         # maindf=DataFrame(dict)
