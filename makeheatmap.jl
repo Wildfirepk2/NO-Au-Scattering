@@ -1,9 +1,10 @@
 # Define directory path
-dir_path = expanduser("~/scratch/NO-Au-results/runs--4-5")
+dir_path = expanduser("~/scratch/NO-Au-results/runs-4-26")
 # dir_path = expanduser("~/Downloads/test_combine_excel")
 nbin=30
-interpolate=false
+interpolate=true
 transparancy_fac=0.7
+labelsize=40
 # transparancy_fac=count(!isempty, dfvec)==1 ? 0.7 : 0.45 # may \fix
 curdir=pwd()
 
@@ -94,12 +95,26 @@ function outputgraph!(f,i,dfvec,systype,temp,orient)
     xyedge=Tuple(range(xy...,nbin) for xy in xylim)
     colors=[:Reds, :Blues]
     colorbarlabels=["Scattered", "Trapped"]
+    labeltmp=[:titlesize, # default=16
+        :xlabelsize, # default=16
+        :ylabelsize, # default=16
+        :xticklabelsize, # default=16
+        :yticklabelsize, # default=16
+        ]
+    labelkwargs = Dict(label => labelsize for label in labeltmp)
+    colorbarkwargs = Dict(:labelsize => labelsize, :ticklabelsize => labelsize) # default=16
+
     # figobjs=[]
 
     for (j,color,label) in zip(eachindex(dfvec),colors,colorbarlabels)
         if !isempty(dfvec[j])
             # setup fig
-            ax=Axis(f[i,2j-1],xlabel="x (Å)",ylabel="y (Å)",title=title)
+            ax=Axis(f[i,2j-1],
+                    xlabel="x (Å)",
+                    ylabel="y (Å)",
+                    title=title;
+                    labelkwargs...
+                    )
             limits!(ax,xylim...)
 
             # plot au coords
@@ -116,7 +131,7 @@ function outputgraph!(f,i,dfvec,systype,temp,orient)
                     # label=label,
                     # transparency = true,
                     )
-            Colorbar(f[i, 2j], hm, label=label,)
+            Colorbar(f[i, 2j], hm, label=label; colorbarkwargs...)
         end
     end
 end
